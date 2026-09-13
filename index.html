@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>板橋文化路209號5F - 電費異常說明與排查申請</title>
+    <style>
+        :root {
+            --primary-color: #d9534f;
+            --secondary-color: #2c3e50;
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --border-color: #e9ecef;
+            --text-color: #333333;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans TC", sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 12px;
+        }
+
+        .container {
+            max-width: 680px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 20px 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        }
+
+        header {
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: var(--secondary-color);
+            font-size: 1.4rem;
+            margin: 0 0 8px 0;
+            line-height: 1.3;
+        }
+
+        .meta-info {
+            color: #666;
+            font-size: 0.9rem;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+        }
+
+        .alert-box {
+            background-color: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .alert-box p {
+            margin: 0;
+            color: #856404;
+            font-size: 0.95rem;
+            font-weight: bold;
+        }
+
+        section {
+            margin-bottom: 25px;
+        }
+
+        h2 {
+            color: var(--secondary-color);
+            font-size: 1.15rem;
+            border-left: 4px solid var(--primary-color);
+            padding-left: 8px;
+            margin-top: 0;
+            margin-bottom: 12px;
+        }
+
+        /* 數據卡片 */
+        .data-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .data-card {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            background: #fff;
+        }
+
+        .data-card.highlight {
+            border-color: #f5c6cb;
+            background-color: #fdf7f7;
+        }
+
+        .data-card .title {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .data-card .detail {
+            font-size: 0.95rem;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+        .data-card .value {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--secondary-color);
+            text-align: right;
+        }
+
+        .data-card.highlight .value {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+
+        /* 圖片網格排版 (RWD 手機優化) */
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .image-box {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            overflow: hidden;
+            background: #fafafa;
+            text-align: center;
+        }
+
+        .image-box img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            display: block;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .image-box img:active {
+            opacity: 0.8;
+        }
+
+        .image-box .caption {
+            font-size: 0.75rem;
+            color: #555;
+            padding: 4px;
+            background: #f1f3f5;
+            font-weight: bold;
+        }
+
+        /* 影片展示區塊 */
+        .video-box {
+            margin-top: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .video-box video {
+            width: 100%;
+            max-height: 350px;
+            display: block;
+        }
+
+        .video-caption {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 4px;
+            text-align: center;
+        }
+
+        .note-text {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        ol, ul {
+            padding-left: 20px;
+            margin: 8px 0;
+        }
+
+        li {
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .action-list {
+            background: #eef9f5;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .action-list h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #155724;
+            font-size: 1.05rem;
+        }
+
+        .action-list ol {
+            margin-bottom: 0;
+        }
+
+        footer {
+            text-align: center;
+            color: #888;
+            font-size: 0.85rem;
+            margin-top: 30px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 15px;
+        }
+
+        /* 懸浮燈箱 (Lightbox) 樣式 */
+        .lightbox-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            backdrop-filter: blur(2px);
+        }
+
+        .lightbox-overlay.active {
+            display: flex;
+        }
+
+        .lightbox-overlay img {
+            max-width: 95%;
+            max-height: 90vh;
+            border-radius: 6px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>電費異常說明與排查申請</h1>
+        <div class="meta-info">
+            🏠 <strong>地點：</strong>板橋區文化路209號5樓<br>
+            👤 <strong>住戶：</strong>5F 張先生<br>
+            📅 <strong>日期：</strong>2026年9月13日
+        </div>
+    </header>
+
+    <div class="alert-box">
+        <p>⚠️ 異常摘要：本月（約1個月）用電飆升至 828 度，大幅超過前兩個月總和（678 度）。測試拔除全家電器後電錶仍持續運轉，懷疑有線路誤接情況。</p>
+    </div>
+
+    <section>
+        <h2>一、 用電數據異常對比與照片佐證</h2>
+        
+        <div class="data-cards">
+            <!-- 6-7月卡片與照片 -->
+            <div class="data-card">
+                <div class="title">🗓️ 6月 ～ 7月（雙月計費）</div>
+                <div class="detail">6月刻度: 10216 ➔ 7月刻度: 10894</div>
+                <div class="value">用電量：678 度</div>
+                
+                <div class="image-grid">
+                    <div class="image-box">
+                        <img src="img1.jpg" alt="圖1：6月電錶 (10216)" onclick="openLightbox(this.src)">
+                        <div class="caption">圖1：6月電錶 (10216)</div>
+                    </div>
+                    <div class="image-box">
+                        <img src="img2.jpg" alt="圖2：7月電錶 (10894)" onclick="openLightbox(this.src)">
+                        <div class="caption">圖2：7月電錶 (10894)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 8-9月卡片與照片 -->
+            <div class="data-card highlight">
+                <div class="title">🗓️ 8月 ～ 9/13（約單月計費）</div>
+                <div class="detail">9/13 最新刻度: 11722</div>
+                <div class="value">用電量：828 度 (異常飆升)</div>
+                
+                <div class="image-grid">
+                    <div class="image-box">
+                        <img src="img3.jpg" alt="圖3：9/13最新電錶 (11722)" onclick="openLightbox(this.src)">
+                        <div class="caption">圖3：9/13最新電錶 (11722)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="note-text">
+            * 僅約一個月的用電量已超越過往兩個月總和 150 度，明顯不符合正常生活用電習慣。
+        </div>
+    </section>
+
+    <section>
+        <h2>二、 異常事件與空載測試影片</h2>
+        <ol>
+            <li>
+                <strong>近期異常紀錄（已於LINE回報）：</strong>
+                <ul>
+                    <li>7/28 曾發生停水（圖4）</li>
+                    <li>7/31 曾發生停電（圖5）</li>
+                </ul>
+                <div class="image-grid">
+                    <div class="image-box">
+                        <img src="img4.jpg" alt="圖4：7/28 停水紀錄" onclick="openLightbox(this.src)">
+                        <div class="caption">圖4：7/28 停水紀錄</div>
+                    </div>
+                    <div class="image-box">
+                        <img src="img5.jpg" alt="圖5：7/31 停電紀錄" onclick="openLightbox(this.src)">
+                        <div class="caption">圖5：7/31 停電紀錄</div>
+                    </div>
+                </div>
+            </li>
+            <br>
+            <li>
+                <strong>自我空載測試（影片1）：</strong>
+                <ul>
+                    <li><strong>測試步驟：</strong>拔除全家所有插頭，僅留總電源（左1）及燈具/插座開關（右1、2）。</li>
+                    <li><strong>測試結果：</strong>完全無使用電器狀況下，電錶依然持續運轉。</li>
+                </ul>
+                
+                <div class="video-box">
+                    <video controls poster="img3.jpg">
+                        <source src="video1.mp4" type="video/mp4">
+                        您的瀏覽器不支援影片播放。
+                    </video>
+                </div>
+                <div class="video-caption">🎥 影片1：空載測試電錶運轉實錄</div>
+            </li>
+        </ol>
+    </section>
+
+    <section>
+        <h2>三、 疑點與協助訴求</h2>
+        <p style="font-size: 0.95rem;">
+            由於 <strong>1 樓用戶於 8 月初開幕營業</strong>，時間點與用電量飆升高度重疊，目前懷疑有電路誤接（如1樓或公用電線誤接至5樓電錶）或線路漏電之情況。
+        </p>
+        
+        <div class="action-list">
+            <h3>懇請房東協助處理：</h3>
+            <ol>
+                <li><strong>排查線路：</strong>盡速安排專業水電技師前來檢測，確認是否有誤接或漏電問題。</li>
+                <li><strong>費用計算：</strong>釐清並討論本期異常電費的合理計算與負擔方式。</li>
+            </ol>
+        </div>
+    </section>
+
+    <footer>
+        板橋文化路209號5F 住戶張先生 敬上
+    </footer>
+</div>
+
+<!-- 懸浮大圖燈箱 HTML 區塊 -->
+<div id="lightbox" class="lightbox-overlay" onclick="closeLightbox()">
+    <img id="lightbox-img" src="" alt="放大圖片">
+</div>
+
+<script>
+    // 開啟懸浮燈箱
+    function openLightbox(src) {
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightbox-img');
+        lightboxImg.src = src;
+        lightbox.classList.add('active');
+    }
+
+    // 關閉懸浮燈箱（點擊任何地方皆可關閉）
+    function closeLightbox() {
+        const lightbox = document.getElementById('lightbox');
+        lightbox.classList.remove('active');
+    }
+</script>
+
+</body>
+</html>
