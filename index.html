@@ -58,8 +58,8 @@
         }
 
         .alert-box {
-            background-color: #fff3cd;
-            border-left: 5px solid #ffc107;
+            background-color: #d4edda;
+            border-left: 5px solid #28a745;
             padding: 12px 15px;
             margin-bottom: 20px;
             border-radius: 4px;
@@ -67,7 +67,7 @@
 
         .alert-box p {
             margin: 0;
-            color: #856404;
+            color: #155724;
             font-size: 0.95rem;
             font-weight: bold;
         }
@@ -85,7 +85,6 @@
             margin-bottom: 12px;
         }
 
-        /* 數據卡片 */
         .data-cards {
             display: flex;
             flex-direction: column;
@@ -129,7 +128,6 @@
             font-size: 1.2rem;
         }
 
-        /* 圖片網格排版 (RWD 手機優化) */
         .image-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -159,11 +157,6 @@
             transform: scale(1.03);
         }
 
-        .image-box:active img {
-            opacity: 0.8;
-        }
-
-        /* 圖片右上角「點擊放大」提示標籤 */
         .zoom-hint {
             position: absolute;
             top: 6px;
@@ -183,11 +176,8 @@
             padding: 4px;
             background: #f1f3f5;
             font-weight: bold;
-            position: relative;
-            z-index: 1;
         }
 
-        /* 影片展示區塊 */
         .video-box {
             margin-top: 10px;
             border: 1px solid var(--border-color);
@@ -233,7 +223,8 @@
         }
 
         .action-list h3 {
-            margin-top: 0;            margin-bottom: 10px;
+            margin-top: 0;
+            margin-bottom: 10px;
             color: #155724;
             font-size: 1.05rem;
         }
@@ -251,7 +242,6 @@
             padding-top: 15px;
         }
 
-        /* 懸浮燈箱 (Lightbox) 樣式 */
         .lightbox-overlay {
             display: none;
             position: fixed;
@@ -295,23 +285,22 @@
 
 <div class="container">
     <header>
-        <h1>電費異常說明與排查申請</h1>
+        <h1>電費異常說明與水電排查結果</h1>
         <div class="meta-info">
             🏠 <strong>地點：</strong>板橋區文化路209號5樓<br>
             👤 <strong>住戶：</strong>5F 張先生<br>
-            📅 <strong>日期：</strong>2026年9月13日
+            📅 <strong>更新日期：</strong>2026年9月18日（水電技師勘查完畢）
         </div>
     </header>
 
     <div class="alert-box">
-        <p>⚠️ 異常摘要：本月（約1個月）用電飆升至 828 度，大幅超過前兩個月總和（678 度）。測試拔除全家電器後電錶仍持續運轉，且關閉電源影響全棟水壓，懷疑有加壓馬達或公用線路誤接情況。</p>
+        <p>✅ 查明原因：水電師傅已現場確認，全棟公共「抽水馬達」線路接在 5F 的最後一個無熔絲開關。1F 營業大量用水導致馬達頻繁運轉，產生之電費全由 5F 承擔。</p>
     </div>
 
     <section>
         <h2>一、 用電數據異常對比與照片佐證</h2>
         
         <div class="data-cards">
-            <!-- 6-7月卡片與照片 -->
             <div class="data-card">
                 <div class="title">🗓️ 6月 ～ 7月（雙月計費）</div>
                 <div class="detail">6月刻度: 00216 ➔ 7月刻度: 00894</div>
@@ -331,7 +320,6 @@
                 </div>
             </div>
 
-            <!-- 8-9月卡片與照片 -->
             <div class="data-card highlight">
                 <div class="title">🗓️ 8月 ～ 9/13（約單月計費）</div>
                 <div class="detail">9/13 最新刻度: 01722</div>
@@ -348,20 +336,18 @@
         </div>
 
         <div class="note-text">
-            * 僅約一個月的用電量已超越過往兩個月總和 150 度，明顯不符合正常生活用電習慣。<br>
-            * 💡 <em>輕觸照片可懸浮放大查看細節。</em>
+            * 僅約一個月的用電量已超越過往兩個月總和 150 度，時間點精準對上 1F 營業開始大量用水的時段。
         </div>
     </section>
 
     <section>
-        <h2>二、 異常事件與現場測試實錄</h2>
+        <h2>二、 異常事件與空載測試影片</h2>
         <ol>
             <li>
-                <strong>近期異常紀錄（已於LINE回報）：</strong>
+                <strong>近期異常紀錄：</strong>
                 <ul>
                     <li>7/28 曾發生停水（圖4）</li>
-                    <li>7/31 曾發生停水，當時有請水電師傅前來協助查看（圖5）</li>
-                    <li>7/31 同日曾發生停電</li>
+                    <li>7/31 曾發生停電（圖5）</li>
                 </ul>
                 <div class="image-grid">
                     <div class="image-box" onclick="openLightbox('img4.jpg')">
@@ -371,8 +357,8 @@
                     </div>
                     <div class="image-box" onclick="openLightbox('img5.jpg')">
                         <span class="zoom-hint">🔍 點擊放大</span>
-                        <img src="img5.jpg" alt="圖5：7/31 停水/停電紀錄">
-                        <div class="caption">圖5：7/31 停水/停電紀錄</div>
+                        <img src="img5.jpg" alt="圖5：7/31 停電紀錄">
+                        <div class="caption">圖5：7/31 停電紀錄</div>
                     </div>
                 </div>
             </li>
@@ -380,10 +366,8 @@
             <li>
                 <strong>自我空載測試（影片1）：</strong>
                 <ul>
-                    <li><strong>測試步驟：</strong>拔除全家所有插頭，僅留總電源（左1）及燈具/插座開關（右1、2）。</li>
-                    <li><strong>測試結果：</strong>完全無使用電器狀況下，電錶依然持續運轉。</li>
+                    <li>完全無使用電器狀況下，關閉右側開關電錶即停止，確定有公共設備吃電。</li>
                 </ul>
-                
                 <div class="video-box">
                     <video controls poster="img3.jpg">
                         <source src="video1.mp4" type="video/mp4">
@@ -392,36 +376,38 @@
                 </div>
                 <div class="video-caption">🎥 影片1：空載測試電錶運轉實錄</div>
             </li>
-            <br>
-            <li>
-                <strong>關閉電源與水壓測試（影片2）：</strong>
-                <ul>
-                    <li><strong>測試發現：</strong>測試過程中關閉 5 樓總電源時，會直接導致水壓大幅下降（且連帶影響到樓下住戶的水壓）。</li>
-                    <li><strong>高度疑點：</strong>懷疑頂樓或公共的加壓馬達電源被誤接到 5 樓的電錶上，導致加壓馬達運轉時全由 5 樓買單。</li>
-                </ul>
-
-                <div class="video-box">
-                    <video controls poster="img3.jpg">
-                        <source src="video2.mp4" type="video/mp4">
-                        您的瀏覽器不支援影片播放。
-                    </video>
-                </div>
-                <div class="video-caption">🎥 影片2：關閉電源水壓下降測試實錄</div>
-            </li>
         </ol>
     </section>
 
     <section>
-        <h2>三、 疑點與協助訴求</h2>
-        <p style="font-size: 0.95rem;">
-            由於 <strong>1 樓用戶於 8 月初開幕營業</strong>，時間點與用電量飆升高度重疊；加上<strong>關閉電源會導致加壓馬達失電/水壓下降</strong>，目前高度懷疑有加壓馬達誤接、公用電線誤接至 5 樓電錶或線路漏電之情況。
-        </p>
-        
+        <h2>三、 水電技師現場勘查結果</h2>
+        <ul>
+            <li><strong>線路查實：</strong>水電師傅核對後確認，**全棟共用的抽水馬達電路，被接在 5F 開關箱內的最後一個無熔絲開關**。</li>
+            <li><strong>暴增原因：</strong>1F 店家於 8 月初開幕營業後長時間大量用水，致使抽水馬達頻繁且長時間運轉，產生之電力消耗全由 5F 電錶支付。時間與度數完全吻合。</li>
+            <li><strong>過往影響：</strong>這代表包含 6-7 月甚至更早以前，整棟用戶（包含公用用水）的抽水馬達電費，一直以來都是由 5F 承擔。</li>
+        </ul>
+
+        <div class="image-grid">
+            <div class="image-box" onclick="openLightbox('img6.jpg')">
+                <span class="zoom-hint">🔍 點擊放大</span>
+                <img src="img6.jpg" alt="圖6：全棟共用抽水馬達">
+                <div class="caption">圖6：全棟共用抽水馬達</div>
+            </div>
+            <div class="image-box" onclick="openLightbox('img7.jpg')">
+                <span class="zoom-hint">🔍 點擊放大</span>
+                <img src="img7.jpg" alt="圖7：5F開關箱（最後一格開關）">
+                <div class="caption">圖7：5F開關箱（馬達開關）</div>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2>四、 後續協調與訴求</h2>
         <div class="action-list">
             <h3>懇請房東協助處理：</h3>
             <ol>
-                <li><strong>排查線路：</strong>盡速安排專業水電技師前來檢測，重點排查「加壓馬達電源來源」、「1樓/公用電線是否誤接」及「漏電問題」。</li>
-                <li><strong>費用計算：</strong>釐清並討論本期異常電費的合理計算與負擔方式。</li>
+                <li><strong>馬達線路重拉/移設：</strong>將抽水馬達線路移至公共電錶，或設置獨立電錶，避免繼續由 5F 計費。</li>
+                <li><strong>本期與過往電費扣除：</strong>釐清本次 828 度中因馬達產生的異常電費，並退還/扣抵 5F 過去負擔之公用馬達電費。</li>
             </ol>
         </div>
     </section>
@@ -431,14 +417,12 @@
     </footer>
 </div>
 
-<!-- 懸浮大圖燈箱 HTML 區塊 -->
 <div id="lightbox" class="lightbox-overlay" onclick="closeLightbox()">
     <img id="lightbox-img" src="" alt="放大圖片">
     <div class="lightbox-close-tip">✕ 點擊任意處關閉</div>
 </div>
 
 <script>
-    // 開啟懸浮燈箱
     function openLightbox(src) {
         const lightbox = document.getElementById('lightbox');
         const lightboxImg = document.getElementById('lightbox-img');
@@ -446,7 +430,6 @@
         lightbox.classList.add('active');
     }
 
-    // 關閉懸浮燈箱（點擊任何地方皆可關閉）
     function closeLightbox() {
         const lightbox = document.getElementById('lightbox');
         lightbox.classList.remove('active');
