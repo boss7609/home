@@ -238,7 +238,6 @@
 
         const soundFX = new SoundEffects();
 
-        // 圖片自動偵測設定：更新為 home/dory 路徑
         const FOLDER_NAME = 'home/dory';
         const DEFAULT_IMAGE_URL = 'https://boss7609.github.io/home/dory/IMG_9536.jpeg';
 
@@ -277,61 +276,67 @@
         let verticalTabs = [];
         let lastClickTime = 0;
 
+        // 精準指定的圖片檔名清單
+        const KNOWN_IMAGES = [
+            'IMG_9536.jpeg', 'IMG_9537.jpeg', 'IMG_9538.jpeg',
+            'IMG_9541.jpeg', 'IMG_9542.jpeg', 'IMG_9543.jpeg',
+            'IMG_9544.jpeg', 'IMG_9545.jpeg', 'IMG_9546.jpeg',
+            'IMG_9548.jpeg', 'IMG_9549.jpeg'
+        ];
+
         // 自動檢測並讀取 home/dory 資料夾中的圖片檔
         async function autoDetectDoryImages() {
-            const possibleNames = [];
-            
-            // 1. 優先加入明確提供的照片檔名
-            possibleNames.push('IMG_9536.jpeg', 'IMG_9536.jpg', 'IMG_9536.JPG');
+            let validImages = [];
 
-            // 2. 自動嘗試附近常見的相機編號（IMG_9500 ~ IMG_9560）
-            for (let i = 9500; i <= 9560; i++) {
-                possibleNames.push(`IMG_${i}.jpeg`, `IMG_${i}.jpg`, `IMG_${i}.JPG`);
-            }
-
-            // 3. 傳統數字命名備用 (1~30)
-            for (let i = 1; i <= 30; i++) {
-                possibleNames.push(`${i}.jpg`, `${i}.jpeg`, `dory${i}.jpg`);
-            }
-
-            const validImages = [];
-
-            const checkImageExists = (url) => {
-                return new Promise((resolve) => {
-                    const img = new Image();
-                    img.onload = () => resolve(true);
-                    img.onerror = () => resolve(false);
-                    img.src = url;
-                });
-            };
-
-            // 併行檢測所有潛在圖片路徑
-            const checks = possibleNames.map(async (fileName) => {
-                const path = `./${FOLDER_NAME}/${fileName}`;
-                const exists = await checkImageExists(path);
-                if (exists) {
-                    validImages.push({ name: fileName, url: path });
+            // 1. 嘗試讀取 images.json (若有放在儲存庫中)
+            try {
+                const response = await fetch(`./${FOLDER_NAME}/images.json`);
+                if (response.ok) {
+                    const fileList = await response.json();
+                    if (Array.isArray(fileList) && fileList.length > 0) {
+                        validImages = fileList.map(name => ({ name, url: `./${FOLDER_NAME}/${name}` }));
+                    }
                 }
-            });
+            } catch (e) {
+                console.warn('未檢測到 images.json，切換至預設檔名清單');
+            }
 
-            await Promise.all(checks);
+            // 2. 若無 images.json，使用已知檔名清單檢測
+            if (validImages.length === 0) {
+                const checkImageExists = (url) => {
+                    return new Promise((resolve) => {
+                        const img = new Image();
+                        img.onload = () => resolve(true);
+                        img.onerror = () => resolve(false);
+                        img.src = url;
+                    });
+                };
 
-            // 去除重複項目
+                const checks = KNOWN_IMAGES.map(async (fileName) => {
+                    const path = `./${FOLDER_NAME}/${fileName}`;
+                    const exists = await checkImageExists(path);
+                    if (exists) {
+                        validImages.push({ name: fileName, url: path });
+                    }
+                });
+
+                await Promise.all(checks);
+            }
+
+            // 去除重複檔名
             const uniqueImages = Array.from(new Set(validImages.map(a => a.url)))
                 .map(url => validImages.find(a => a.url === url));
 
             if (uniqueImages.length > 0) {
                 loadedImages = uniqueImages;
-                currentImageIndex = 0;
-                renderGalleryDrawer();
-                switchImage(0);
             } else {
-                // 若找不到相對路徑（例如本地直接開啟 HTML 時），預設載入指定的 GitHub Pages 網址
+                // 完全找不到時，載入預設圖片網址
                 loadedImages = [{ name: 'IMG_9536.jpeg', url: DEFAULT_IMAGE_URL }];
-                currentImageIndex = 0;
-                renderGalleryDrawer();
-                switchImage(0);
             }
+
+            currentImageIndex = 0;
+            renderGalleryDrawer();
+            switchImage(0);
         }
 
         function renderGalleryDrawer() {
@@ -393,6 +398,45 @@
                     verticalTabs[r][c] = Math.random() < 0.5 ? 1 : -1;
                 }
             }
+        }
+
+        function setupGame() {
+            resizeCanvas();
+            isCompleted = false;
+
+            const grid = calculateGrid(currentImage.width, currentImage.height, selectedPieceCount);
+            cols = grid.cols;
+            rows = grid.rows;
+
+            document.getElementById('gridInfoText').innerText = `預計網格：${cols} x ${rows} 格 (${grid.actualCount} 片)`;
+            document.getElementById('hintImage').src = currentImage.src;
+
+            // 計算拼圖底圖位置與比例
+            const margin = 80;
+            const maxW = canvas.width - margin * 2;
+            const maxH = canvas.height - margin * 2;
+
+            const imgRatio = currentImage.width / currentImage.height;
+            let boardW = maxW;
+            let boardH = maxW / imgRatio;
+
+            if (boardH > maxH) {
+                boardH = maxH;
+                boardW = maxH * imgRatio;
+            }
+
+            boardBounds = {
+                x: (canvas.width - boardW) / 2,
+                y: (canvas.height - boardH) / 2,
+                w: boardW,
+                h: boardH
+            };
+
+            generateTabs(cols, rows);
+            createPuzzlePieces();
+            resetTimer();
+            startTimer();
+            updateProgress();
         }
 
         function createPuzzlePieces() {
@@ -507,7 +551,7 @@
             ctx.fill();
             ctx.stroke();
 
-            // 對齊線
+            // 對齊格線
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
             ctx.lineWidth = 1;
             const pW = boardBounds.w / cols;
@@ -698,309 +742,211 @@
 
         function handlePointerUp() {
             if (draggedGroup) {
-                checkSnapAndMerge(draggedGroup);
+                checkGroupSnap(draggedGroup);
                 draggedGroup = null;
-                checkVictoryCondition();
             }
             isDraggingCanvas = false;
         }
 
-        function checkSnapAndMerge(group) {
-            const snapThreshold = Math.min(boardBounds.w / cols, boardBounds.h / rows) * 0.35;
-            let merged = false;
+        function checkGroupSnap(group) {
+            const snapThreshold = 18;
+            let snapped = false;
 
-            // 1. 吸附到正確位置 (底板)
-            group.pieces.forEach(p => {
+            // 1. 檢查是否吸附到目標位置 (正確底稿位置)
+            for (const p of group.pieces) {
                 const dist = Math.hypot(p.x - p.targetX, p.y - p.targetY);
                 if (dist < snapThreshold) {
                     const dx = p.targetX - p.x;
                     const dy = p.targetY - p.y;
-
-                    group.pieces.forEach(gp => {
-                        gp.x += dx;
-                        gp.y += dy;
-                        gp.isLocked = true;
+                    group.pieces.forEach(piece => {
+                        piece.x += dx;
+                        piece.y += dy;
+                        piece.isLocked = true;
                     });
-
+                    snapped = true;
                     soundFX.playSnap();
-                    merged = true;
+                    break;
                 }
-            });
+            }
 
-            // 2. 群組間相鄰吸附
-            if (!merged) {
-                for (let i = 0; i < groups.length; i++) {
-                    const otherGroup = groups[i];
+            // 2. 檢查是否與其他鄰近拼圖群組對齊吸附
+            if (!snapped) {
+                for (const otherGroup of groups) {
                     if (otherGroup === group) continue;
-
-                    let shouldMerge = false;
-                    let snapDx = 0, snapDy = 0;
 
                     for (const p1 of group.pieces) {
                         for (const p2 of otherGroup.pieces) {
-                            if (Math.abs(p1.row - p2.row) + Math.abs(p1.col - p2.col) === 1) {
-                                const expectedDx = p1.targetX - p2.targetX;
-                                const expectedDy = p1.targetY - p2.targetY;
-                                const currentDx = p1.x - p2.x;
-                                const currentDy = p1.y - p2.y;
+                            const isNeighbor = Math.abs(p1.row - p2.row) + Math.abs(p1.col - p2.col) === 1;
+                            if (isNeighbor) {
+                                const expectedDx = (p1.col - p2.col) * p1.width;
+                                const expectedDy = (p1.row - p2.row) * p1.height;
+                                const actualDx = p1.x - p2.x;
+                                const actualDy = p1.y - p2.y;
 
-                                if (Math.hypot(currentDx - expectedDx, currentDy - expectedDy) < snapThreshold) {
-                                    shouldMerge = true;
-                                    snapDx = (p2.x + expectedDx) - p1.x;
-                                    snapDy = (p2.y + expectedDy) - p1.y;
+                                if (Math.hypot(actualDx - expectedDx, actualDy - expectedDy) < snapThreshold) {
+                                    const shiftX = p2.x + expectedDx - p1.x;
+                                    const shiftY = p2.y + expectedDy - p1.y;
+
+                                    group.pieces.forEach(p => {
+                                        p.x += shiftX;
+                                        p.y += shiftY;
+                                        otherGroup.pieces.push(p);
+                                    });
+
+                                    groups.splice(groups.indexOf(group), 1);
+                                    snapped = true;
+                                    soundFX.playSnap();
                                     break;
                                 }
                             }
                         }
-                        if (shouldMerge) break;
+                        if (snapped) break;
                     }
-
-                    if (shouldMerge) {
-                        group.pieces.forEach(gp => {
-                            gp.x += snapDx;
-                            gp.y += snapDy;
-                            if (otherGroup.pieces[0].isLocked) gp.isLocked = true;
-                            otherGroup.pieces.push(gp);
-                        });
-
-                        groups.splice(groups.indexOf(group), 1);
-                        soundFX.playSnap();
-                        break;
-                    }
+                    if (snapped) break;
                 }
             }
 
-            updateProgressUI();
+            updateProgress();
+            checkVictory();
         }
 
-        function updateProgressUI() {
+        function updateProgress() {
             const lockedCount = pieces.filter(p => p.isLocked).length;
             document.getElementById('progressText').innerText = `${lockedCount} / ${pieces.length}`;
         }
 
-        function checkVictoryCondition() {
-            const allLocked = pieces.every(p => p.isLocked);
-            if (allLocked && !isCompleted) {
+        function checkVictory() {
+            if (pieces.length > 0 && pieces.every(p => p.isLocked)) {
                 isCompleted = true;
-                clearInterval(timerInterval);
+                stopTimer();
                 soundFX.playVictory();
-
-                confetti({
-                    particleCount: 120,
-                    spread: 80,
-                    origin: { y: 0.6 }
-                });
-
-                setTimeout(() => {
-                    alert(`🎉 恭喜完成拼圖！總用時：${document.getElementById('timerText').innerText}`);
-                }, 300);
+                confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
             }
         }
 
-        function sortTrayPieces() {
-            const pieceW = boardBounds.w / cols;
-            const pieceH = boardBounds.h / rows;
-            let leftCount = 0;
-            let rightCount = 0;
-
-            groups.forEach(group => {
-                if (group.pieces.some(p => p.isLocked)) return;
-
-                const isLeft = (leftCount <= rightCount);
-                const colIdx = isLeft ? Math.floor(leftCount / 12) : Math.floor(rightCount / 12);
-                const rowIdx = isLeft ? (leftCount % 12) : (rightCount % 12);
-
-                const startX = isLeft 
-                    ? boardBounds.x - pieceW * 2.2 - colIdx * (pieceW * 1.1)
-                    : boardBounds.x + boardBounds.w + pieceW * 1.2 + colIdx * (pieceW * 1.1);
-                const startY = boardBounds.y + rowIdx * (pieceH * 0.85);
-
-                const refP = group.pieces[0];
-                const dx = startX - refP.x;
-                const dy = startY - refP.y;
-
-                group.pieces.forEach(p => {
-                    p.x += dx;
-                    p.y += dy;
-                });
-
-                if (isLeft) leftCount++; else rightCount++;
-            });
-        }
-
-        function scatterPieces() {
-            const pieceW = boardBounds.w / cols;
-            const pieceH = boardBounds.h / rows;
-
-            groups.forEach(group => {
-                if (group.pieces.some(p => p.isLocked)) return;
-
-                const randomX = boardBounds.x + (Math.random() - 0.5) * (boardBounds.w * 1.8);
-                const randomY = boardBounds.y + (Math.random() - 0.5) * (boardBounds.h * 1.8);
-
-                const refP = group.pieces[0];
-                const dx = randomX - refP.x;
-                const dy = randomY - refP.y;
-
-                group.pieces.forEach(p => {
-                    p.x += dx;
-                    p.y += dy;
-                });
-            });
-        }
-
-        function setupGame() {
-            clearInterval(timerInterval);
+        function startTimer() {
+            stopTimer();
             secondsElapsed = 0;
-            isCompleted = false;
-            document.getElementById('timerText').innerText = "00:00";
-
             timerInterval = setInterval(() => {
                 secondsElapsed++;
                 const mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
                 const secs = String(secondsElapsed % 60).padStart(2, '0');
                 document.getElementById('timerText').innerText = `${mins}:${secs}`;
             }, 1000);
-
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
-
-            const grid = calculateGrid(currentImage.width, currentImage.height, selectedPieceCount);
-            cols = grid.cols;
-            rows = grid.rows;
-
-            const margin = 120;
-            const maxW = canvas.width - margin * 2;
-            const maxH = canvas.height - margin * 2;
-
-            let bw = maxW;
-            let bh = bw * (currentImage.height / currentImage.width);
-
-            if (bh > maxH) {
-                bh = maxH;
-                bw = bh * (currentImage.width / currentImage.height);
-            }
-
-            boardBounds = {
-                x: (canvas.width - bw) / 2,
-                y: (canvas.height - bh) / 2,
-                w: bw,
-                h: bh
-            };
-
-            document.getElementById('hintImage').src = currentImage.src;
-
-            generateTabs(cols, rows);
-            createPuzzlePieces();
-            updateProgressUI();
         }
 
-        // 初始化與事件監聽
-        window.addEventListener('load', () => {
-            // 自動偵測 home/dory 資料夾圖片
-            autoDetectDoryImages();
+        function stopTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+        }
 
-            // Canvas 操作事件
-            canvas.addEventListener('mousedown', handlePointerDown);
-            window.addEventListener('mousemove', handlePointerMove);
-            window.addEventListener('mouseup', handlePointerUp);
+        function resetTimer() {
+            stopTimer();
+            document.getElementById('timerText').innerText = '00:00';
+        }
 
-            canvas.addEventListener('touchstart', handlePointerDown, { passive: true });
-            window.addEventListener('touchmove', handlePointerMove, { passive: true });
-            window.addEventListener('touchend', handlePointerUp);
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight - 60;
+        }
 
-            canvas.addEventListener('wheel', (e) => {
-                e.preventDefault();
-                const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
-                scale = Math.min(Math.max(0.4, scale * zoomFactor), 3.0);
-                document.getElementById('zoomText').innerText = `${Math.round(scale * 100)}%`;
-            }, { passive: false });
+        // 綁定事件處置器
+        window.addEventListener('resize', () => { resizeCanvas(); });
 
-            // 控制按鈕事件
-            document.getElementById('btnRandomImg').addEventListener('click', () => {
-                if (loadedImages.length === 0) return;
-                const nextIdx = Math.floor(Math.random() * loadedImages.length);
-                switchImage(nextIdx);
-            });
+        canvas.addEventListener('mousedown', handlePointerDown);
+        canvas.addEventListener('mousemove', handlePointerMove);
+        window.addEventListener('mouseup', handlePointerUp);
 
-            document.getElementById('btnPrevImg').addEventListener('click', () => switchImage(currentImageIndex - 1));
-            document.getElementById('btnNextImg').addEventListener('click', () => switchImage(currentImageIndex + 1));
+        canvas.addEventListener('touchstart', (e) => handlePointerDown(e), { passive: false });
+        canvas.addEventListener('touchmove', (e) => handlePointerMove(e), { passive: false });
+        window.addEventListener('touchend', handlePointerUp);
 
-            document.getElementById('btnNewGame').addEventListener('click', () => {
-                document.getElementById('newGameModal').classList.remove('hidden');
-            });
-            document.getElementById('btnCloseModal').addEventListener('click', () => {
-                document.getElementById('newGameModal').classList.add('hidden');
-            });
+        // 按鈕控制
+        document.getElementById('btnPrevImg').addEventListener('click', () => switchImage(currentImageIndex - 1));
+        document.getElementById('btnNextImg').addEventListener('click', () => switchImage(currentImageIndex + 1));
+        document.getElementById('btnRandomImg').addEventListener('click', () => {
+            const randIdx = Math.floor(Math.random() * loadedImages.length);
+            switchImage(randIdx);
+        });
 
-            document.querySelectorAll('.piece-option-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    document.querySelectorAll('.piece-option-btn').forEach(b => {
-                        b.classList.remove('active-piece-btn', 'border-2', 'border-indigo-500', 'bg-indigo-950/50');
-                        b.classList.add('border', 'border-slate-800', 'bg-slate-950');
-                    });
-                    const target = e.currentTarget;
-                    target.classList.add('active-piece-btn', 'border-2', 'border-indigo-500', 'bg-indigo-950/50');
-                    selectedPieceCount = parseInt(target.getAttribute('data-pieces'));
+        document.getElementById('btnZoomIn').addEventListener('click', () => {
+            scale = Math.min(2.5, scale + 0.15);
+            document.getElementById('zoomText').innerText = `${Math.round(scale * 100)}%`;
+        });
+        document.getElementById('btnZoomOut').addEventListener('click', () => {
+            scale = Math.max(0.5, scale - 0.15);
+            document.getElementById('zoomText').innerText = `${Math.round(scale * 100)}%`;
+        });
+        document.getElementById('btnZoomReset').addEventListener('click', () => {
+            scale = 1.0; panX = 0; panY = 0;
+            document.getElementById('zoomText').innerText = '100%';
+        });
 
-                    if (currentImage.width) {
-                        const grid = calculateGrid(currentImage.width, currentImage.height, selectedPieceCount);
-                        document.getElementById('gridInfoText').innerText = `預計網格：${grid.cols} x ${grid.rows} 格 (${grid.actualCount} 片)`;
-                    }
-                });
-            });
+        document.getElementById('btnTogglePreview').addEventListener('click', () => {
+            const hint = document.getElementById('hintOverlay');
+            const opacityControl = document.getElementById('opacitySliderContainer');
+            if (hint.classList.contains('opacity-0')) {
+                hint.classList.remove('opacity-0');
+                opacityControl.classList.remove('hidden');
+            } else {
+                hint.classList.add('opacity-0');
+                opacityControl.classList.add('hidden');
+            }
+        });
 
-            document.getElementById('btnStartGame').addEventListener('click', () => {
-                document.getElementById('newGameModal').classList.add('hidden');
-                setupGame();
-            });
+        document.getElementById('opacitySlider').addEventListener('input', (e) => {
+            document.getElementById('hintImage').style.opacity = e.target.value;
+        });
 
-            document.getElementById('btnTogglePreview').addEventListener('click', () => {
-                const hint = document.getElementById('hintOverlay');
-                const slider = document.getElementById('opacitySliderContainer');
-                const isHidden = hint.classList.contains('opacity-0');
+        document.getElementById('btnEdgeOnly').addEventListener('click', () => {
+            showEdgeOnly = !showEdgeOnly;
+            document.getElementById('btnEdgeOnly').classList.toggle('bg-indigo-600', showEdgeOnly);
+        });
 
-                if (isHidden) {
-                    hint.classList.remove('opacity-0');
-                    slider.classList.remove('hidden');
+        document.getElementById('btnSortTray').addEventListener('click', () => {
+            let leftCount = 0, rightCount = 0;
+            groups.forEach(g => {
+                if (g.pieces.some(p => p.isLocked)) return;
+                const p = g.pieces[0];
+                if (leftCount <= rightCount) {
+                    p.x = boardBounds.x - p.width * 1.5 - (leftCount % 3) * (p.width * 0.8);
+                    p.y = boardBounds.y + Math.floor(leftCount / 3) * (p.height * 0.8);
+                    leftCount++;
                 } else {
-                    hint.classList.add('opacity-0');
-                    slider.classList.add('hidden');
+                    p.x = boardBounds.x + boardBounds.w + (rightCount % 3) * (p.width * 0.8);
+                    p.y = boardBounds.y + Math.floor(rightCount / 3) * (p.height * 0.8);
+                    rightCount++;
                 }
             });
-
-            document.getElementById('opacitySlider').addEventListener('input', (e) => {
-                document.getElementById('hintImage').style.opacity = e.target.value;
-            });
-
-            document.getElementById('btnEdgeOnly').addEventListener('click', () => {
-                showEdgeOnly = !showEdgeOnly;
-                document.getElementById('btnEdgeOnly').classList.toggle('bg-indigo-600', showEdgeOnly);
-            });
-
-            document.getElementById('btnSortTray').addEventListener('click', sortTrayPieces);
-            document.getElementById('btnScatter').addEventListener('click', scatterPieces);
-
-            document.getElementById('btnZoomIn').addEventListener('click', () => {
-                scale = Math.min(3.0, scale * 1.15);
-                document.getElementById('zoomText').innerText = `${Math.round(scale * 100)}%`;
-            });
-            document.getElementById('btnZoomOut').addEventListener('click', () => {
-                scale = Math.max(0.4, scale * 0.85);
-                document.getElementById('zoomText').innerText = `${Math.round(scale * 100)}%`;
-            });
-            document.getElementById('btnZoomReset').addEventListener('click', () => {
-                scale = 1.0; panX = 0; panY = 0;
-                document.getElementById('zoomText').innerText = `100%`;
-            });
-
-            window.addEventListener('resize', () => {
-                if (currentImage.src) setupGame();
-            });
-
-            // 啟動主渲染循環
-            requestAnimationFrame(render);
         });
+
+        // 設定選單對話框
+        const modal = document.getElementById('newGameModal');
+        document.getElementById('btnNewGame').addEventListener('click', () => modal.classList.remove('hidden'));
+        document.getElementById('btnCloseModal').addEventListener('click', () => modal.classList.add('hidden'));
+
+        document.querySelectorAll('.piece-option-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.piece-option-btn').forEach(b => {
+                    b.classList.remove('border-2', 'border-indigo-500', 'bg-indigo-950/50');
+                    b.classList.add('border-slate-800', 'bg-slate-950');
+                });
+                const target = e.currentTarget;
+                target.classList.remove('border-slate-800', 'bg-slate-950');
+                target.classList.add('border-2', 'border-indigo-500', 'bg-indigo-950/50');
+                selectedPieceCount = parseInt(target.getAttribute('data-pieces'));
+            });
+        });
+
+        document.getElementById('btnStartGame').addEventListener('click', () => {
+            modal.classList.add('hidden');
+            setupGame();
+        });
+
+        // 啟動應用程式並進入繪圖循環
+        window.onload = () => {
+            autoDetectDoryImages();
+            requestAnimationFrame(render);
+        };
     </script>
 </body>
 </html>
