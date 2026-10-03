@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>dory 隨機圖片線上拼圖大師</title>
+    <title>dory 線上拼圖大師</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -41,9 +41,9 @@
             <div>
                 <h1 class="text-base sm:text-lg font-bold tracking-wide text-indigo-300 flex items-center gap-2">
                     <span>拼圖大師</span>
-                    <span id="currentImgName" class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-normal max-w-[150px] truncate inline-block">讀取中...</span>
+                    <span id="currentImgName" class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-normal max-w-[180px] truncate inline-block">讀取中...</span>
                 </h1>
-                <p class="text-[10px] text-slate-400 -mt-0.5">自動讀取 dory 資料夾內圖片</p>
+                <p class="text-[10px] text-slate-400 -mt-0.5">自動讀取 home/dory 資料夾圖片</p>
             </div>
         </div>
 
@@ -96,7 +96,7 @@
 
     <!-- 已載入圖片畫廊條 (縮圖抽屜) -->
     <div id="galleryBar" class="bg-slate-900/90 border-b border-slate-800 px-4 py-2 flex items-center space-x-3 overflow-x-auto no-scrollbar z-20 shrink-0">
-        <span class="text-xs text-slate-400 font-semibold shrink-0">dory 圖庫 (<span id="galleryCount">0</span>)：</span>
+        <span class="text-xs text-slate-400 font-semibold shrink-0">home/dory 圖庫 (<span id="galleryCount">0</span>)：</span>
         <div id="galleryThumbnails" class="flex items-center space-x-2"></div>
     </div>
 
@@ -126,7 +126,7 @@
                 <i class="fa-solid fa-magnifying-glass-plus"></i>
             </button>
             <button id="btnZoomReset" class="px-2 py-1 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white text-xs font-mono font-bold transition">
-                100%
+                <span id="zoomText">100%</span>
             </button>
             <button id="btnZoomOut" class="p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition" title="縮小">
                 <i class="fa-solid fa-magnifying-glass-minus"></i>
@@ -201,7 +201,7 @@
         </div>
     </div>
 
-    <!-- JavaScript 遊戲核心與自動讀取資料夾邏輯 -->
+    <!-- JavaScript 遊戲核心與自動讀取 home/dory 資料夾邏輯 -->
     <script>
         // 音效處理
         class SoundEffects {
@@ -238,8 +238,10 @@
 
         const soundFX = new SoundEffects();
 
-        // 圖片自動偵測設定 (可根據實際圖片名稱或數量微調檔名組合)
-        const FOLDER_NAME = 'dory';
+        // 圖片自動偵測設定：更新為 home/dory 路徑
+        const FOLDER_NAME = 'home/dory';
+        const DEFAULT_IMAGE_URL = 'https://boss7609.github.io/home/dory/IMG_9536.jpeg';
+
         let loadedImages = []; // { name, url }
         let currentImageIndex = 0;
         let currentImage = new Image();
@@ -275,23 +277,25 @@
         let verticalTabs = [];
         let lastClickTime = 0;
 
-        // 自動檢測並讀取 dory 資料夾中的圖片檔
+        // 自動檢測並讀取 home/dory 資料夾中的圖片檔
         async function autoDetectDoryImages() {
             const possibleNames = [];
             
-            // 嘗試常見檔名格式（數字命名：1~30、dory1~dory30、img1~img30）
-            for (let i = 1; i <= 30; i++) {
-                possibleNames.push(`${i}.jpg`, `${i}.jpeg`, `${i}.JPG`, `${i}.JPEG`);
-                possibleNames.push(`dory${i}.jpg`, `dory${i}.jpeg`, `dory_${i}.jpg`, `dory_${i}.jpeg`);
-                possibleNames.push(`img${i}.jpg`, `image${i}.jpg`, `pic${i}.jpg`);
+            // 1. 優先加入明確提供的照片檔名
+            possibleNames.push('IMG_9536.jpeg', 'IMG_9536.jpg', 'IMG_9536.JPG');
+
+            // 2. 自動嘗試附近常見的相機編號（IMG_9500 ~ IMG_9560）
+            for (let i = 9500; i <= 9560; i++) {
+                possibleNames.push(`IMG_${i}.jpeg`, `IMG_${i}.jpg`, `IMG_${i}.JPG`);
             }
-            
-            // 嘗試常見單獨命名
-            possibleNames.push('dory.jpg', 'dory.jpeg', 'cover.jpg', 'main.jpg');
+
+            // 3. 傳統數字命名備用 (1~30)
+            for (let i = 1; i <= 30; i++) {
+                possibleNames.push(`${i}.jpg`, `${i}.jpeg`, `dory${i}.jpg`);
+            }
 
             const validImages = [];
 
-            // 輔助檢查圖片是否存在
             const checkImageExists = (url) => {
                 return new Promise((resolve) => {
                     const img = new Image();
@@ -312,17 +316,21 @@
 
             await Promise.all(checks);
 
-            // 按名稱進行天然排序
-            validImages.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+            // 去除重複項目
+            const uniqueImages = Array.from(new Set(validImages.map(a => a.url)))
+                .map(url => validImages.find(a => a.url === url));
 
-            if (validImages.length > 0) {
-                loadedImages = validImages;
+            if (uniqueImages.length > 0) {
+                loadedImages = uniqueImages;
                 currentImageIndex = 0;
                 renderGalleryDrawer();
                 switchImage(0);
             } else {
-                document.getElementById('currentImgName').innerText = "未找到圖片";
-                alert(`在 ./${FOLDER_NAME}/ 資料夾中找不到圖片！\n請確保圖片檔名為：1.jpg, 2.jpg 或 dory1.jpg 等，並放在與網頁相同的 dory 資料夾內。`);
+                // 若找不到相對路徑（例如本地直接開啟 HTML 時），預設載入指定的 GitHub Pages 網址
+                loadedImages = [{ name: 'IMG_9536.jpeg', url: DEFAULT_IMAGE_URL }];
+                currentImageIndex = 0;
+                renderGalleryDrawer();
+                switchImage(0);
             }
         }
 
@@ -554,7 +562,6 @@
                 ctx.save();
                 ctx.clip();
 
-                // 精確 1:1 比率圖像裁切
                 const tabPadding = Math.min(p.width, p.height) * 0.35;
                 const renderDx = p.x - tabPadding;
                 const renderDy = p.y - tabPadding;
@@ -702,7 +709,7 @@
             const snapThreshold = Math.min(boardBounds.w / cols, boardBounds.h / rows) * 0.35;
             let merged = false;
 
-            // 1. 檢查吸附到目標位置 (底板)
+            // 1. 吸附到正確位置 (底板)
             group.pieces.forEach(p => {
                 const dist = Math.hypot(p.x - p.targetX, p.y - p.targetY);
                 if (dist < snapThreshold) {
@@ -720,7 +727,7 @@
                 }
             });
 
-            // 2. 檢查群組間拼接吸附
+            // 2. 群組間相鄰吸附
             if (!merged) {
                 for (let i = 0; i < groups.length; i++) {
                     const otherGroup = groups[i];
@@ -855,7 +862,6 @@
                 document.getElementById('timerText').innerText = `${mins}:${secs}`;
             }, 1000);
 
-            // 畫布尺寸與邊界適應
             canvas.width = canvas.parentElement.clientWidth;
             canvas.height = canvas.parentElement.clientHeight;
 
@@ -889,12 +895,12 @@
             updateProgressUI();
         }
 
-        // 初始化與事件接頭
+        // 初始化與事件監聽
         window.addEventListener('load', () => {
-            // 自動嘗試讀取 dory 資料夾
+            // 自動偵測 home/dory 資料夾圖片
             autoDetectDoryImages();
 
-            // 畫布與滑鼠事件註冊
+            // Canvas 操作事件
             canvas.addEventListener('mousedown', handlePointerDown);
             window.addEventListener('mousemove', handlePointerMove);
             window.addEventListener('mouseup', handlePointerUp);
@@ -910,7 +916,7 @@
                 document.getElementById('zoomText').innerText = `${Math.round(scale * 100)}%`;
             }, { passive: false });
 
-            // 頂部與面板控制項
+            // 控制按鈕事件
             document.getElementById('btnRandomImg').addEventListener('click', () => {
                 if (loadedImages.length === 0) return;
                 const nextIdx = Math.floor(Math.random() * loadedImages.length);
@@ -992,7 +998,7 @@
                 if (currentImage.src) setupGame();
             });
 
-            // 開啟渲染循環
+            // 啟動主渲染循環
             requestAnimationFrame(render);
         });
     </script>
