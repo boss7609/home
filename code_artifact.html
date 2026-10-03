@@ -41,24 +41,23 @@
             <div>
                 <h1 class="text-base sm:text-lg font-bold tracking-wide text-indigo-300 flex items-center gap-2">
                     <span>拼圖大師</span>
-                    <span id="currentImgName" class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-normal max-w-[150px] truncate inline-block">預設樣板</span>
+                    <span id="currentImgName" class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-normal max-w-[150px] truncate inline-block">讀取中...</span>
                 </h1>
-                <p class="text-[10px] text-slate-400 -mt-0.5">自動讀取 dory 資料夾內隨機命名圖片</p>
+                <p class="text-[10px] text-slate-400 -mt-0.5">自動讀取 dory 資料夾內圖片</p>
             </div>
         </div>
 
-        <!-- 讀取 dory 資料夾核心按鈕 -->
+        <!-- 圖片切換與載入區域 -->
         <div class="flex items-center space-x-2">
-            <button id="btnLoadFolder" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center space-x-2 shadow-lg shadow-indigo-500/25 active:scale-95">
-                <i class="fa-solid fa-folder-open text-amber-300"></i>
-                <span>📂 載入 dory 資料夾</span>
+            <button id="btnRandomImg" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center space-x-2 shadow-lg shadow-indigo-500/25 active:scale-95">
+                <i class="fa-solid fa-shuffle text-amber-300"></i>
+                <span>🎲 隨機切換圖片</span>
             </button>
-            <input type="file" id="folderInputFallback" webkitdirectory directory multiple class="hidden">
 
-            <button id="btnPrevImg" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-xl text-xs transition disabled:opacity-30" disabled title="上一張圖片">
+            <button id="btnPrevImg" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-xl text-xs transition disabled:opacity-30" title="上一張圖片">
                 <i class="fa-solid fa-chevron-left"></i>
             </button>
-            <button id="btnNextImg" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-xl text-xs transition disabled:opacity-30" disabled title="下一張圖片">
+            <button id="btnNextImg" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-xl text-xs transition disabled:opacity-30" title="下一張圖片">
                 <i class="fa-solid fa-chevron-right"></i>
             </button>
         </div>
@@ -96,7 +95,7 @@
     </header>
 
     <!-- 已載入圖片畫廊條 (縮圖抽屜) -->
-    <div id="galleryBar" class="hidden bg-slate-900/90 border-b border-slate-800 px-4 py-2 flex items-center space-x-3 overflow-x-auto no-scrollbar z-20 shrink-0">
+    <div id="galleryBar" class="bg-slate-900/90 border-b border-slate-800 px-4 py-2 flex items-center space-x-3 overflow-x-auto no-scrollbar z-20 shrink-0">
         <span class="text-xs text-slate-400 font-semibold shrink-0">dory 圖庫 (<span id="galleryCount">0</span>)：</span>
         <div id="galleryThumbnails" class="flex items-center space-x-2"></div>
     </div>
@@ -126,7 +125,7 @@
             <button id="btnZoomIn" class="p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition" title="放大">
                 <i class="fa-solid fa-magnifying-glass-plus"></i>
             </button>
-            <button id="btnZoomReset" class="px-2 py-1 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white text-xs font-mono font-bold transition" id="zoomText">
+            <button id="btnZoomReset" class="px-2 py-1 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white text-xs font-mono font-bold transition">
                 100%
             </button>
             <button id="btnZoomOut" class="p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition" title="縮小">
@@ -143,17 +142,10 @@
             <span class="text-slate-400 font-medium">底圖透明度</span>
             <input type="range" id="opacitySlider" min="0.1" max="0.9" step="0.05" value="0.4" class="w-24 accent-indigo-500 cursor-pointer">
         </div>
-
-        <!-- 拖拽圖片 / 資料夾提示罩 -->
-        <div id="dragDropOverlay" class="hidden absolute inset-0 z-40 bg-indigo-950/80 backdrop-blur-md border-4 border-dashed border-indigo-400 flex flex-col items-center justify-center text-white pointer-events-none">
-            <i class="fa-solid fa-folder-open text-6xl text-indigo-300 mb-4 animate-bounce"></i>
-            <h3 class="text-2xl font-bold">放開滑鼠以載入 dory 資料夾 / 圖片</h3>
-            <p class="text-sm text-indigo-200 mt-2">自動讀取資料夾內的 JPG, PNG, WEBP, GIF 圖片</p>
-        </div>
     </main>
 
     <!-- 拼圖設定面板 Modal -->
-    <div id="newGameModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div id="newGameModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl shadow-2xl p-6 overflow-y-auto max-h-[90vh]">
             <div class="flex justify-between items-center pb-4 border-b border-slate-800 mb-5">
                 <h2 class="text-lg font-bold text-white flex items-center space-x-2">
@@ -209,8 +201,9 @@
         </div>
     </div>
 
-    <!-- JavaScript 遊戲核心與資料夾載入邏輯 -->
+    <!-- JavaScript 遊戲核心與自動讀取資料夾邏輯 -->
     <script>
+        // 音效處理
         class SoundEffects {
             constructor() { this.ctx = null; }
             init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); }
@@ -245,9 +238,8 @@
 
         const soundFX = new SoundEffects();
 
-        // 預設 SVG Dory 圖像樣板
-        const DEFAULT_SVG_DORY = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800"><rect width="1200" height="800" fill="%230f172a"/><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="%231e1b4b"/><stop offset="100%" stop-color="%23311b92"/></linearGradient></defs><rect width="1200" height="800" fill="url(%23g)"/><circle cx="600" cy="400" r="300" fill="%232563eb" opacity="0.8"/><ellipse cx="550" cy="400" rx="220" ry="140" fill="%233b82f6"/><path d="M 750,400 L 920,300 L 920,500 Z" fill="%23facc15"/><circle cx="430" cy="360" r="28" fill="%23ffffff"/><circle cx="430" cy="360" r="14" fill="%23000000"/><path d="M 400,430 Q 500,480 600,420" stroke="%23ffffff" stroke-width="8" fill="none" stroke-linecap="round"/><text x="600" y="720" font-family="sans-serif" font-size="32" font-weight="bold" fill="%23818cf8" text-anchor="middle">請點擊上方的 [📂 載入 dory 資料夾] 按鈕匯入圖片</text></svg>`;
-
+        // 圖片自動偵測設定 (可根據實際圖片名稱或數量微調檔名組合)
+        const FOLDER_NAME = 'dory';
         let loadedImages = []; // { name, url }
         let currentImageIndex = 0;
         let currentImage = new Image();
@@ -283,52 +275,55 @@
         let verticalTabs = [];
         let lastClickTime = 0;
 
-        // 自動載入/讀取 dory 資料夾
-        async function loadDoryFolder() {
-            try {
-                if ('showDirectoryPicker' in window) {
-                    const dirHandle = await window.showDirectoryPicker();
-                    const files = [];
-                    for await (const entry of dirHandle.values()) {
-                        if (entry.kind === 'file') {
-                            const file = await entry.getFile();
-                            if (file.type.startsWith('image/') || /\.(jpg|jpeg|png|webp|gif)$/i.test(file.name)) {
-                                files.push(file);
-                            }
-                        }
-                    }
-                    if (files.length > 0) {
-                        processFileList(files);
-                        return;
-                    }
+        // 自動檢測並讀取 dory 資料夾中的圖片檔
+        async function autoDetectDoryImages() {
+            const possibleNames = [];
+            
+            // 嘗試常見檔名格式（數字命名：1~30、dory1~dory30、img1~img30）
+            for (let i = 1; i <= 30; i++) {
+                possibleNames.push(`${i}.jpg`, `${i}.jpeg`, `${i}.JPG`, `${i}.JPEG`);
+                possibleNames.push(`dory${i}.jpg`, `dory${i}.jpeg`, `dory_${i}.jpg`, `dory_${i}.jpeg`);
+                possibleNames.push(`img${i}.jpg`, `image${i}.jpg`, `pic${i}.jpg`);
+            }
+            
+            // 嘗試常見單獨命名
+            possibleNames.push('dory.jpg', 'dory.jpeg', 'cover.jpg', 'main.jpg');
+
+            const validImages = [];
+
+            // 輔助檢查圖片是否存在
+            const checkImageExists = (url) => {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = () => resolve(true);
+                    img.onerror = () => resolve(false);
+                    img.src = url;
+                });
+            };
+
+            // 併行檢測所有潛在圖片路徑
+            const checks = possibleNames.map(async (fileName) => {
+                const path = `./${FOLDER_NAME}/${fileName}`;
+                const exists = await checkImageExists(path);
+                if (exists) {
+                    validImages.push({ name: fileName, url: path });
                 }
-            } catch (err) {
-                console.log("Directory Picker fallback", err);
+            });
+
+            await Promise.all(checks);
+
+            // 按名稱進行天然排序
+            validImages.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+
+            if (validImages.length > 0) {
+                loadedImages = validImages;
+                currentImageIndex = 0;
+                renderGalleryDrawer();
+                switchImage(0);
+            } else {
+                document.getElementById('currentImgName').innerText = "未找到圖片";
+                alert(`在 ./${FOLDER_NAME}/ 資料夾中找不到圖片！\n請確保圖片檔名為：1.jpg, 2.jpg 或 dory1.jpg 等，並放在與網頁相同的 dory 資料夾內。`);
             }
-            // 回退觸發傳統 input file directory
-            document.getElementById('folderInputFallback').click();
-        }
-
-        function processFileList(files) {
-            const validImages = Array.from(files).filter(f => 
-                f.type.startsWith('image/') || /\.(jpg|jpeg|png|webp|gif)$/i.test(f.name)
-            );
-
-            if (validImages.length === 0) {
-                alert("所選資料夾中未找到可用的 JPG, PNG, WEBP 圖像！");
-                return;
-            }
-
-            // 清理舊的 Blob URLs
-            loadedImages.forEach(img => URL.revokeObjectURL(img.url));
-            loadedImages = validImages.map(file => ({
-                name: file.name,
-                url: URL.createObjectURL(file)
-            }));
-
-            currentImageIndex = 0;
-            renderGalleryDrawer();
-            switchImage(0);
         }
 
         function renderGalleryDrawer() {
@@ -559,7 +554,7 @@
                 ctx.save();
                 ctx.clip();
 
-                // 精確 1:1 比率圖像裁切 (Mapping Source coordinates)
+                // 精確 1:1 比率圖像裁切
                 const tabPadding = Math.min(p.width, p.height) * 0.35;
                 const renderDx = p.x - tabPadding;
                 const renderDy = p.y - tabPadding;
@@ -650,6 +645,8 @@
 
             if (now - lastClickTime < 300 && found) {
                 showPieceMagnifier(found.piece);
+                lastClickTime = now;
+                return;
             }
             lastClickTime = now;
 
@@ -658,15 +655,14 @@
                 dragOffsetX = pos.x;
                 dragOffsetY = pos.y;
 
-                const idx = groups.indexOf(draggedGroup);
-                if (idx > -1) {
-                    groups.splice(idx, 1);
-                    groups.push(draggedGroup);
-                }
+                groups.splice(groups.indexOf(draggedGroup), 1);
+                groups.push(draggedGroup);
             } else {
                 isDraggingCanvas = true;
-                lastMouseX = e.touches ? e.touches[0].clientX : e.clientX;
-                lastMouseY = e.touches ? e.touches[0].clientY : e.clientY;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                lastMouseX = clientX;
+                lastMouseY = clientY;
             }
         }
 
@@ -686,10 +682,8 @@
             } else if (isDraggingCanvas) {
                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
                 panX += clientX - lastMouseX;
                 panY += clientY - lastMouseY;
-
                 lastMouseX = clientX;
                 lastMouseY = clientY;
             }
@@ -697,59 +691,56 @@
 
         function handlePointerUp() {
             if (draggedGroup) {
-                checkSnap(draggedGroup);
+                checkSnapAndMerge(draggedGroup);
                 draggedGroup = null;
+                checkVictoryCondition();
             }
             isDraggingCanvas = false;
         }
 
-        function checkSnap(group) {
-            const snapThreshold = Math.min(boardBounds.w / cols, boardBounds.h / rows) * 0.4;
-            let snapped = false;
+        function checkSnapAndMerge(group) {
+            const snapThreshold = Math.min(boardBounds.w / cols, boardBounds.h / rows) * 0.35;
+            let merged = false;
 
-            // 1. 吸附底圖正確位置
-            for (const p of group.pieces) {
-                const distToTarget = Math.hypot(p.x - p.targetX, p.y - p.targetY);
+            // 1. 檢查吸附到目標位置 (底板)
+            group.pieces.forEach(p => {
+                const dist = Math.hypot(p.x - p.targetX, p.y - p.targetY);
+                if (dist < snapThreshold) {
+                    const dx = p.targetX - p.x;
+                    const dy = p.targetY - p.y;
 
-                if (distToTarget < snapThreshold) {
-                    const correctionX = p.targetX - p.x;
-                    const correctionY = p.targetY - p.y;
-
-                    group.pieces.forEach(piece => {
-                        piece.x += correctionX;
-                        piece.y += correctionY;
-                        piece.isLocked = true;
+                    group.pieces.forEach(gp => {
+                        gp.x += dx;
+                        gp.y += dy;
+                        gp.isLocked = true;
                     });
 
-                    snapped = true;
                     soundFX.playSnap();
-                    break;
+                    merged = true;
                 }
-            }
+            });
 
-            // 2. 吸附相鄰拼片
-            if (!snapped) {
-                for (const otherGroup of groups) {
+            // 2. 檢查群組間拼接吸附
+            if (!merged) {
+                for (let i = 0; i < groups.length; i++) {
+                    const otherGroup = groups[i];
                     if (otherGroup === group) continue;
 
                     let shouldMerge = false;
-                    let mergeOffsetX = 0;
-                    let mergeOffsetY = 0;
+                    let snapDx = 0, snapDy = 0;
 
                     for (const p1 of group.pieces) {
                         for (const p2 of otherGroup.pieces) {
-                            const isNeighbor = Math.abs(p1.row - p2.row) + Math.abs(p1.col - p2.col) === 1;
-
-                            if (isNeighbor) {
+                            if (Math.abs(p1.row - p2.row) + Math.abs(p1.col - p2.col) === 1) {
                                 const expectedDx = p1.targetX - p2.targetX;
                                 const expectedDy = p1.targetY - p2.targetY;
-                                const actualDx = p1.x - p2.x;
-                                const actualDy = p1.y - p2.y;
+                                const currentDx = p1.x - p2.x;
+                                const currentDy = p1.y - p2.y;
 
-                                if (Math.hypot(actualDx - expectedDx, actualDy - expectedDy) < snapThreshold) {
+                                if (Math.hypot(currentDx - expectedDx, currentDy - expectedDy) < snapThreshold) {
                                     shouldMerge = true;
-                                    mergeOffsetX = (p2.x + expectedDx) - p1.x;
-                                    mergeOffsetY = (p2.y + expectedDy) - p1.y;
+                                    snapDx = (p2.x + expectedDx) - p1.x;
+                                    snapDy = (p2.y + expectedDy) - p1.y;
                                     break;
                                 }
                             }
@@ -758,258 +749,252 @@
                     }
 
                     if (shouldMerge) {
-                        group.pieces.forEach(p => {
-                            p.x += mergeOffsetX;
-                            p.y += mergeOffsetY;
-                            otherGroup.pieces.push(p);
+                        group.pieces.forEach(gp => {
+                            gp.x += snapDx;
+                            gp.y += snapDy;
+                            if (otherGroup.pieces[0].isLocked) gp.isLocked = true;
+                            otherGroup.pieces.push(gp);
                         });
 
-                        const groupIdx = groups.indexOf(group);
-                        if (groupIdx > -1) groups.splice(groupIdx, 1);
-
+                        groups.splice(groups.indexOf(group), 1);
                         soundFX.playSnap();
                         break;
                     }
                 }
             }
 
-            updateProgress();
+            updateProgressUI();
         }
 
-        function updateProgress() {
+        function updateProgressUI() {
             const lockedCount = pieces.filter(p => p.isLocked).length;
             document.getElementById('progressText').innerText = `${lockedCount} / ${pieces.length}`;
+        }
 
-            if (lockedCount === pieces.length && pieces.length > 0 && !isCompleted) {
+        function checkVictoryCondition() {
+            const allLocked = pieces.every(p => p.isLocked);
+            if (allLocked && !isCompleted) {
                 isCompleted = true;
                 clearInterval(timerInterval);
                 soundFX.playVictory();
 
-                confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+                confetti({
+                    particleCount: 120,
+                    spread: 80,
+                    origin: { y: 0.6 }
+                });
 
                 setTimeout(() => {
-                    alert(`🎉 恭喜完成這關拼圖！\n花費時間：${formatTime(secondsElapsed)}\n挑戰片數：${pieces.length} 片`);
+                    alert(`🎉 恭喜完成拼圖！總用時：${document.getElementById('timerText').innerText}`);
                 }, 300);
             }
         }
 
-        function startTimer() {
-            clearInterval(timerInterval);
-            secondsElapsed = 0;
-            document.getElementById('timerText').innerText = "00:00";
-            timerInterval = setInterval(() => {
-                secondsElapsed++;
-                document.getElementById('timerText').innerText = formatTime(secondsElapsed);
-            }, 1000);
+        function sortTrayPieces() {
+            const pieceW = boardBounds.w / cols;
+            const pieceH = boardBounds.h / rows;
+            let leftCount = 0;
+            let rightCount = 0;
+
+            groups.forEach(group => {
+                if (group.pieces.some(p => p.isLocked)) return;
+
+                const isLeft = (leftCount <= rightCount);
+                const colIdx = isLeft ? Math.floor(leftCount / 12) : Math.floor(rightCount / 12);
+                const rowIdx = isLeft ? (leftCount % 12) : (rightCount % 12);
+
+                const startX = isLeft 
+                    ? boardBounds.x - pieceW * 2.2 - colIdx * (pieceW * 1.1)
+                    : boardBounds.x + boardBounds.w + pieceW * 1.2 + colIdx * (pieceW * 1.1);
+                const startY = boardBounds.y + rowIdx * (pieceH * 0.85);
+
+                const refP = group.pieces[0];
+                const dx = startX - refP.x;
+                const dy = startY - refP.y;
+
+                group.pieces.forEach(p => {
+                    p.x += dx;
+                    p.y += dy;
+                });
+
+                if (isLeft) leftCount++; else rightCount++;
+            });
         }
 
-        function formatTime(sec) {
-            const m = Math.floor(sec / 60).toString().padStart(2, '0');
-            const s = (sec % 60).toString().padStart(2, '0');
-            return `${m}:${s}`;
+        function scatterPieces() {
+            const pieceW = boardBounds.w / cols;
+            const pieceH = boardBounds.h / rows;
+
+            groups.forEach(group => {
+                if (group.pieces.some(p => p.isLocked)) return;
+
+                const randomX = boardBounds.x + (Math.random() - 0.5) * (boardBounds.w * 1.8);
+                const randomY = boardBounds.y + (Math.random() - 0.5) * (boardBounds.h * 1.8);
+
+                const refP = group.pieces[0];
+                const dx = randomX - refP.x;
+                const dy = randomY - refP.y;
+
+                group.pieces.forEach(p => {
+                    p.x += dx;
+                    p.y += dy;
+                });
+            });
         }
 
         function setupGame() {
-            const container = document.getElementById('workspace');
-            canvas.width = container.clientWidth;
-            canvas.height = container.clientHeight;
+            clearInterval(timerInterval);
+            secondsElapsed = 0;
+            isCompleted = false;
+            document.getElementById('timerText').innerText = "00:00";
 
-            const maxW = canvas.width * 0.75;
-            const maxH = canvas.height * 0.75;
-            const imgAspect = (currentImage.width || 1200) / (currentImage.height || 800);
+            timerInterval = setInterval(() => {
+                secondsElapsed++;
+                const mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+                const secs = String(secondsElapsed % 60).padStart(2, '0');
+                document.getElementById('timerText').innerText = `${mins}:${secs}`;
+            }, 1000);
 
-            let boardW = maxW;
-            let boardH = maxW / imgAspect;
+            // 畫布尺寸與邊界適應
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
 
-            if (boardH > maxH) {
-                boardH = maxH;
-                boardW = maxH * imgAspect;
-            }
-
-            boardBounds = {
-                x: (canvas.width - boardW) / 2,
-                y: (canvas.height - boardH) / 2,
-                w: boardW,
-                h: boardH
-            };
-
-            const hintImg = document.getElementById('hintImage');
-            hintImg.src = currentImage.src;
-            hintImg.style.width = `${boardW}px`;
-            hintImg.style.height = `${boardH}px`;
-
-            const grid = calculateGrid(currentImage.width || 1200, currentImage.height || 800, selectedPieceCount);
+            const grid = calculateGrid(currentImage.width, currentImage.height, selectedPieceCount);
             cols = grid.cols;
             rows = grid.rows;
 
+            const margin = 120;
+            const maxW = canvas.width - margin * 2;
+            const maxH = canvas.height - margin * 2;
+
+            let bw = maxW;
+            let bh = bw * (currentImage.height / currentImage.width);
+
+            if (bh > maxH) {
+                bh = maxH;
+                bw = bh * (currentImage.width / currentImage.height);
+            }
+
+            boardBounds = {
+                x: (canvas.width - bw) / 2,
+                y: (canvas.height - bh) / 2,
+                w: bw,
+                h: bh
+            };
+
+            document.getElementById('hintImage').src = currentImage.src;
+
             generateTabs(cols, rows);
             createPuzzlePieces();
-
-            isCompleted = false;
-            scale = 1.0;
-            panX = 0;
-            panY = 0;
-
-            updateProgress();
-            startTimer();
+            updateProgressUI();
         }
 
-        function initUI() {
-            const modal = document.getElementById('newGameModal');
+        // 初始化與事件接頭
+        window.addEventListener('load', () => {
+            // 自動嘗試讀取 dory 資料夾
+            autoDetectDoryImages();
 
-            document.getElementById('btnLoadFolder').addEventListener('click', loadDoryFolder);
-            document.getElementById('folderInputFallback').addEventListener('change', (e) => {
-                if (e.target.files && e.target.files.length > 0) {
-                    processFileList(e.target.files);
-                }
+            // 畫布與滑鼠事件註冊
+            canvas.addEventListener('mousedown', handlePointerDown);
+            window.addEventListener('mousemove', handlePointerMove);
+            window.addEventListener('mouseup', handlePointerUp);
+
+            canvas.addEventListener('touchstart', handlePointerDown, { passive: true });
+            window.addEventListener('touchmove', handlePointerMove, { passive: true });
+            window.addEventListener('touchend', handlePointerUp);
+
+            canvas.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+                scale = Math.min(Math.max(0.4, scale * zoomFactor), 3.0);
+                document.getElementById('zoomText').innerText = `${Math.round(scale * 100)}%`;
+            }, { passive: false });
+
+            // 頂部與面板控制項
+            document.getElementById('btnRandomImg').addEventListener('click', () => {
+                if (loadedImages.length === 0) return;
+                const nextIdx = Math.floor(Math.random() * loadedImages.length);
+                switchImage(nextIdx);
             });
 
             document.getElementById('btnPrevImg').addEventListener('click', () => switchImage(currentImageIndex - 1));
             document.getElementById('btnNextImg').addEventListener('click', () => switchImage(currentImageIndex + 1));
 
-            document.getElementById('btnNewGame').addEventListener('click', () => modal.classList.remove('hidden'));
-            document.getElementById('btnCloseModal').addEventListener('click', () => modal.classList.add('hidden'));
+            document.getElementById('btnNewGame').addEventListener('click', () => {
+                document.getElementById('newGameModal').classList.remove('hidden');
+            });
+            document.getElementById('btnCloseModal').addEventListener('click', () => {
+                document.getElementById('newGameModal').classList.add('hidden');
+            });
 
-            const pieceBtns = document.querySelectorAll('.piece-option-btn');
-            pieceBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    pieceBtns.forEach(b => b.classList.remove('border-2', 'border-indigo-500', 'bg-indigo-950/50'));
-                    btn.classList.add('border-2', 'border-indigo-500', 'bg-indigo-950/50');
-                    selectedPieceCount = parseInt(btn.dataset.pieces);
+            document.querySelectorAll('.piece-option-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.piece-option-btn').forEach(b => {
+                        b.classList.remove('active-piece-btn', 'border-2', 'border-indigo-500', 'bg-indigo-950/50');
+                        b.classList.add('border', 'border-slate-800', 'bg-slate-950');
+                    });
+                    const target = e.currentTarget;
+                    target.classList.add('active-piece-btn', 'border-2', 'border-indigo-500', 'bg-indigo-950/50');
+                    selectedPieceCount = parseInt(target.getAttribute('data-pieces'));
 
-                    const grid = calculateGrid(currentImage.width || 1200, currentImage.height || 800, selectedPieceCount);
-                    document.getElementById('gridInfoText').innerText = `預計網格：${grid.cols} x ${grid.rows} 格 (${grid.actualCount} 片)`;
+                    if (currentImage.width) {
+                        const grid = calculateGrid(currentImage.width, currentImage.height, selectedPieceCount);
+                        document.getElementById('gridInfoText').innerText = `預計網格：${grid.cols} x ${grid.rows} 格 (${grid.actualCount} 片)`;
+                    }
                 });
             });
 
             document.getElementById('btnStartGame').addEventListener('click', () => {
-                modal.classList.add('hidden');
-                if (currentImage.complete) setupGame();
-                else currentImage.onload = () => setupGame();
+                document.getElementById('newGameModal').classList.add('hidden');
+                setupGame();
             });
 
-            const hintOverlay = document.getElementById('hintOverlay');
-            const opacitySliderContainer = document.getElementById('opacitySliderContainer');
-            
             document.getElementById('btnTogglePreview').addEventListener('click', () => {
-                const isHidden = hintOverlay.classList.contains('opacity-0');
+                const hint = document.getElementById('hintOverlay');
+                const slider = document.getElementById('opacitySliderContainer');
+                const isHidden = hint.classList.contains('opacity-0');
+
                 if (isHidden) {
-                    hintOverlay.classList.remove('opacity-0');
-                    opacitySliderContainer.classList.remove('hidden');
+                    hint.classList.remove('opacity-0');
+                    slider.classList.remove('hidden');
                 } else {
-                    hintOverlay.classList.add('opacity-0');
-                    opacitySliderContainer.classList.add('hidden');
+                    hint.classList.add('opacity-0');
+                    slider.classList.add('hidden');
                 }
             });
 
             document.getElementById('opacitySlider').addEventListener('input', (e) => {
-                hintOverlay.style.opacity = e.target.value;
+                document.getElementById('hintImage').style.opacity = e.target.value;
             });
 
-            document.getElementById('btnEdgeOnly').addEventListener('click', (e) => {
+            document.getElementById('btnEdgeOnly').addEventListener('click', () => {
                 showEdgeOnly = !showEdgeOnly;
-                e.currentTarget.classList.toggle('bg-indigo-600', showEdgeOnly);
+                document.getElementById('btnEdgeOnly').classList.toggle('bg-indigo-600', showEdgeOnly);
             });
 
-            document.getElementById('btnSortTray').addEventListener('click', () => {
-                const pW = boardBounds.w / cols;
-                const pH = boardBounds.h / rows;
-                let edgeIdx = 0;
-                let innerIdx = 0;
+            document.getElementById('btnSortTray').addEventListener('click', sortTrayPieces);
+            document.getElementById('btnScatter').addEventListener('click', scatterPieces);
 
-                groups.forEach(g => {
-                    const isLocked = g.pieces.some(p => p.isLocked);
-                    if (!isLocked) {
-                        const first = g.pieces[0];
-                        let targetX, targetY;
-
-                        if (first.isEdge) {
-                            targetX = boardBounds.x - pW * 2.2;
-                            targetY = boardBounds.y + (edgeIdx * pH * 1.1) % (boardBounds.h * 1.2);
-                            edgeIdx++;
-                        } else {
-                            targetX = boardBounds.x + boardBounds.w + pW * 1.2;
-                            targetY = boardBounds.y + (innerIdx * pH * 1.1) % (boardBounds.h * 1.2);
-                            innerIdx++;
-                        }
-
-                        const dx = targetX - first.x;
-                        const dy = targetY - first.y;
-
-                        g.pieces.forEach(p => {
-                            p.x += dx;
-                            p.y += dy;
-                        });
-                    }
-                });
-            });
-
-            const updateZoomText = () => {
+            document.getElementById('btnZoomIn').addEventListener('click', () => {
+                scale = Math.min(3.0, scale * 1.15);
                 document.getElementById('zoomText').innerText = `${Math.round(scale * 100)}%`;
-            };
-
-            document.getElementById('btnZoomIn').addEventListener('click', () => { scale = Math.min(scale * 1.25, 5.0); updateZoomText(); });
-            document.getElementById('btnZoomOut').addEventListener('click', () => { scale = Math.max(scale / 1.25, 0.4); updateZoomText(); });
-            document.getElementById('btnZoomReset').addEventListener('click', () => { scale = 1.0; panX = 0; panY = 0; updateZoomText(); });
-
-            document.getElementById('btnScatter').addEventListener('click', () => {
-                groups.forEach(g => {
-                    if (!g.pieces.some(p => p.isLocked)) {
-                        const pW = boardBounds.w / cols;
-                        const rx = Math.random() < 0.5 
-                            ? boardBounds.x - pW * 2.5 - Math.random() * 200 
-                            : boardBounds.x + boardBounds.w + pW + Math.random() * 200;
-                        const ry = boardBounds.y + Math.random() * (boardBounds.h);
-
-                        const dx = rx - g.pieces[0].x;
-                        const dy = ry - g.pieces[0].y;
-                        g.pieces.forEach(p => { p.x += dx; p.y += dy; });
-                    }
-                });
             });
-
-            // 拖放 (Drag and Drop) 資料夾或圖片
-            const dropOverlay = document.getElementById('dragDropOverlay');
-            window.addEventListener('dragover', (e) => { e.preventDefault(); dropOverlay.classList.remove('hidden'); });
-            window.addEventListener('dragleave', (e) => {
-                if (e.clientX <= 0 || e.clientY <= 0) dropOverlay.classList.add('hidden');
+            document.getElementById('btnZoomOut').addEventListener('click', () => {
+                scale = Math.max(0.4, scale * 0.85);
+                document.getElementById('zoomText').innerText = `${Math.round(scale * 100)}%`;
             });
-            window.addEventListener('drop', (e) => {
-                e.preventDefault();
-                dropOverlay.classList.add('hidden');
-                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                    processFileList(e.dataTransfer.files);
-                }
+            document.getElementById('btnZoomReset').addEventListener('click', () => {
+                scale = 1.0; panX = 0; panY = 0;
+                document.getElementById('zoomText').innerText = `100%`;
             });
-
-            canvas.addEventListener('mousedown', handlePointerDown);
-            canvas.addEventListener('mousemove', handlePointerMove);
-            window.addEventListener('mouseup', handlePointerUp);
-
-            canvas.addEventListener('touchstart', (e) => { handlePointerDown(e); e.preventDefault(); }, { passive: false });
-            canvas.addEventListener('touchmove', (e) => { handlePointerMove(e); e.preventDefault(); }, { passive: false });
-            window.addEventListener('touchend', handlePointerUp);
-
-            canvas.addEventListener('wheel', (e) => {
-                e.preventDefault();
-                const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85;
-                scale = Math.min(Math.max(scale * zoomFactor, 0.4), 5.0);
-                updateZoomText();
-            }, { passive: false });
 
             window.addEventListener('resize', () => {
-                if (pieces.length > 0) setupGame();
+                if (currentImage.src) setupGame();
             });
-        }
 
-        window.onload = () => {
-            initUI();
-            currentImage.onload = () => {
-                setupGame();
-                requestAnimationFrame(render);
-            };
-            currentImage.src = DEFAULT_SVG_DORY;
-        };
+            // 開啟渲染循環
+            requestAnimationFrame(render);
+        });
     </script>
 </body>
 </html>
