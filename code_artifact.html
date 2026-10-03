@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>互動式線上拼圖大師 - 舒適版</title>
+    <title>互動式線上拼圖大師</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Canvas Confetti Library -->
@@ -47,7 +47,7 @@
                 <h1 class="text-lg sm:text-xl font-bold tracking-wide bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
                     線上拼圖大師
                 </h1>
-                <span class="text-[10px] text-slate-400 block -mt-1">雙擊拼片可開啟高清晰放大鏡</span>
+                <span class="text-[10px] text-slate-400 block -mt-1">精確切割版 | 雙擊拼片查看細節</span>
             </div>
         </div>
 
@@ -96,8 +96,8 @@
         <!-- 拼圖主繪圖區 -->
         <canvas id="puzzleCanvas" class="absolute inset-0 z-10 canvas-container"></canvas>
 
-        <!-- 放大鏡預覽面板 (Magnifier Modal) -->
-        <div id="magnifierModal" class="hidden absolute top-6 left-1/2 -translate-x-1/2 z-30 bg-slate-800/95 border border-indigo-500/50 p-3 rounded-2xl shadow-2xl backdrop-blur flex flex-col items-center space-y-2 pointer-events-none animate-bounce-short">
+        <!-- 放大鏡預覽面板 -->
+        <div id="magnifierModal" class="hidden absolute top-6 left-1/2 -translate-x-1/2 z-30 bg-slate-800/95 border border-indigo-500/50 p-3 rounded-2xl shadow-2xl backdrop-blur flex flex-col items-center space-y-2 pointer-events-none">
             <div class="text-xs text-indigo-300 font-bold flex items-center space-x-1">
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <span>拼片圖案特寫預覽</span>
@@ -155,7 +155,7 @@
                 </div>
 
                 <div>
-                    <span class="text-xs text-slate-400 block mb-2">或選擇精選圖片：</span>
+                    <span class="text-xs text-slate-400 block mb-2">或選擇預設圖庫：</span>
                     <div class="grid grid-cols-4 gap-2" id="sampleImagesGrid"></div>
                 </div>
             </div>
@@ -199,7 +199,7 @@
             <!-- 開始按鈕 -->
             <button id="btnStartGame" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-indigo-500/25 transition transform active:scale-98 flex items-center justify-center space-x-2 text-base">
                 <i class="fa-solid fa-play"></i>
-                <span>開始舒適拼圖</span>
+                <span>開始拼圖</span>
             </button>
         </div>
     </div>
@@ -250,7 +250,7 @@
         const ctx = canvas.getContext('2d');
 
         let currentImage = new Image();
-        let selectedPieceCount = 100; // 預設 100 片
+        let selectedPieceCount = 100;
         let cols = 12;
         let rows = 8;
 
@@ -278,10 +278,9 @@
         let horizontalTabs = [];
         let verticalTabs = [];
 
-        // 雙擊發動放大鏡與時間戳
         let lastClickTime = 0;
 
-        // 計算最佳行列
+        // 計算最佳網格
         function calculateGrid(imgWidth, imgHeight, targetCount) {
             const aspect = imgWidth / imgHeight;
             let bestCols = Math.round(Math.sqrt(targetCount * aspect));
@@ -328,7 +327,7 @@
 
                     const isEdge = (r === 0 || r === rows - 1 || c === 0 || c === cols - 1);
 
-                    // 初始將拼圖散落在兩側與下方托盤，拉開距離避免擠壓
+                    // 初始拼片隨機散落於畫面兩側托盤區
                     let randomX, randomY;
                     if (Math.random() < 0.5) {
                         randomX = Math.random() < 0.5 
@@ -359,9 +358,9 @@
             }
         }
 
-        // 貝茲曲線繪製凸榫
+        // 貝茲曲線繪製凸榫路徑
         function drawPiecePath(ctx, x, y, w, h, tabs) {
-            const tabSize = Math.min(w, h) * 0.23;
+            const tabSize = Math.min(w, h) * 0.22;
             ctx.beginPath();
             ctx.moveTo(x, y);
 
@@ -414,7 +413,7 @@
             ctx.translate(panX, panY);
             ctx.scale(scale, scale);
 
-            // 1. 底板容器背景
+            // 1. 繪製底板容器背景
             ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
             ctx.strokeStyle = 'rgba(99, 102, 241, 0.5)';
             ctx.lineWidth = 3;
@@ -423,7 +422,7 @@
             ctx.fill();
             ctx.stroke();
 
-            // 底板對齊輔助線
+            // 底板對齊網格線
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
             ctx.lineWidth = 1;
             const pW = boardBounds.w / cols;
@@ -441,7 +440,7 @@
                 ctx.stroke();
             }
 
-            // 2. 渲染所有拼圖群組
+            // 2. 繪製所有拼圖群組
             groups.forEach(group => {
                 if (group !== draggedGroup) renderGroup(group);
             });
@@ -463,6 +462,8 @@
                 }
 
                 ctx.save();
+                
+                // 1. 繪製並裁切拼圖凸榫路徑
                 drawPiecePath(ctx, p.x, p.y, p.width, p.height, p.tabs);
 
                 if (isDragging) {
@@ -476,28 +477,46 @@
                 }
 
                 ctx.save();
-                ctx.clip();
+                ctx.clip(); // 建立凹凸拼片裁切面
 
-                const srcX = (p.col / cols) * currentImage.width;
-                const srcY = (p.row / rows) * currentImage.height;
-                const srcW = currentImage.width / cols;
-                const srcH = currentImage.height / rows;
+                // 2. 精確 1:1 圖片裁切點計算 (修復圖片拉伸與幾何錯位問題)
+                const tabPadding = Math.min(p.width, p.height) * 0.35; // 擴充繪製範圍容納凸榫
 
-                const bufferRatio = 0.35;
-                const sx = Math.max(0, srcX - srcW * bufferRatio);
-                const sy = Math.max(0, srcY - srcH * bufferRatio);
-                const sw = Math.min(currentImage.width - sx, srcW * (1 + bufferRatio * 2));
-                const sh = Math.min(currentImage.height - sy, srcH * (1 + bufferRatio * 2));
+                // 計算 Canvas 上的目標繪製區域 (Include tab margins)
+                const renderDx = p.x - tabPadding;
+                const renderDy = p.y - tabPadding;
+                const renderDw = p.width + tabPadding * 2;
+                const renderDh = p.height + tabPadding * 2;
 
-                const dx = p.x - p.width * bufferRatio;
-                const dy = p.y - p.height * bufferRatio;
-                const dw = p.width * (1 + bufferRatio * 2);
-                const dh = p.height * (1 + bufferRatio * 2);
+                // 將 Canvas 座標精確轉換為原圖像素座標空間 (Source Image coordinates)
+                const scaleX = currentImage.width / boardBounds.w;
+                const scaleY = currentImage.height / boardBounds.h;
 
-                ctx.drawImage(currentImage, sx, sy, sw, sh, dx, dy, dw, dh);
+                const renderSx = (p.col * p.width - tabPadding) * scaleX;
+                const renderSy = (p.row * p.height - tabPadding) * scaleY;
+                const renderSw = (p.width + tabPadding * 2) * scaleX;
+                const renderSh = (p.height + tabPadding * 2) * scaleY;
+
+                // 安全邊界限制，防止越界裁切
+                const safeSx = Math.max(0, renderSx);
+                const safeSy = Math.max(0, renderSy);
+                const safeSw = Math.min(currentImage.width - safeSx, renderSw - (safeSx - renderSx));
+                const safeSh = Math.min(currentImage.height - safeSy, renderSh - (safeSy - renderSy));
+
+                const adjustedDx = renderDx + (safeSx - renderSx) / scaleX;
+                const adjustedDy = renderDy + (safeSy - renderSy) / scaleY;
+                const adjustedDw = safeSw / scaleX;
+                const adjustedDh = safeSh / scaleY;
+
+                ctx.drawImage(
+                    currentImage,
+                    safeSx, safeSy, safeSw, safeSh,
+                    adjustedDx, adjustedDy, adjustedDw, adjustedDh
+                );
+
                 ctx.restore();
 
-                // 拼片邊界光影
+                // 3. 繪製拼片輪廓線與光影
                 ctx.strokeStyle = p.isLocked 
                     ? 'rgba(255, 255, 255, 0.25)' 
                     : (isDragging ? 'rgba(129, 140, 248, 0.95)' : 'rgba(255, 255, 255, 0.45)');
@@ -531,7 +550,6 @@
             return null;
         }
 
-        // 雙擊展示細節特寫放大鏡
         function showPieceMagnifier(piece) {
             const modal = document.getElementById('magnifierModal');
             const magCanvas = document.getElementById('magnifierCanvas');
@@ -557,7 +575,6 @@
             const pos = getMousePos(e);
             const found = findPieceAt(pos);
 
-            // 觸發雙擊檢測
             if (now - lastClickTime < 300 && found) {
                 showPieceMagnifier(found.piece);
             }
@@ -724,7 +741,6 @@
             canvas.width = container.clientWidth;
             canvas.height = container.clientHeight;
 
-            // 提高基礎版面大小（佔據畫布 75% 寬度）
             const maxW = canvas.width * 0.75;
             const maxH = canvas.height * 0.75;
             const imgAspect = currentImage.width / currentImage.height;
@@ -846,7 +862,6 @@
                 e.currentTarget.classList.toggle('bg-indigo-600', showEdgeOnly);
             });
 
-            // 自動整理托盤（按邊框片與內部片歸類兩側）
             document.getElementById('btnSortTray').addEventListener('click', () => {
                 const pW = boardBounds.w / cols;
                 const pH = boardBounds.h / rows;
@@ -880,7 +895,6 @@
                 });
             });
 
-            // 放大縮小按鈕 (最大至 500%)
             const updateZoomText = () => {
                 document.getElementById('zoomText').innerText = `${Math.round(scale * 100)}%`;
             };
