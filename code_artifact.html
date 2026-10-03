@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>互動式線上拼圖大師</title>
+    <title>dory 隨機圖片線上拼圖大師</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Canvas Confetti Library -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
@@ -22,188 +21,195 @@
         .canvas-container:active {
             cursor: grabbing;
         }
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
         }
-        ::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.1);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(156, 163, 175, 0.5);
-            border-radius: 4px;
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-100 h-screen w-screen overflow-hidden flex flex-col transition-colors duration-300" id="appBody">
+<body class="bg-slate-950 text-slate-100 h-screen w-screen overflow-hidden flex flex-col relative" id="appBody">
 
-    <!-- 頂部導覽與工具列 -->
-    <header class="bg-slate-800/90 backdrop-blur border-b border-slate-700 px-4 py-2 flex flex-wrap items-center justify-between gap-2 z-20 shrink-0">
+    <!-- 頂部控制列 -->
+    <header class="bg-slate-900/95 backdrop-blur border-b border-slate-800 px-4 py-2 flex flex-wrap items-center justify-between gap-2 z-30 shrink-0">
         <div class="flex items-center space-x-3">
-            <div class="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-500/30">
+            <div class="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-600/30">
                 <i class="fa-solid fa-puzzle-piece text-xl"></i>
             </div>
             <div>
-                <h1 class="text-lg sm:text-xl font-bold tracking-wide bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-                    線上拼圖大師
+                <h1 class="text-base sm:text-lg font-bold tracking-wide text-indigo-300 flex items-center gap-2">
+                    <span>拼圖大師</span>
+                    <span id="currentImgName" class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-normal max-w-[150px] truncate inline-block">預設樣板</span>
                 </h1>
-                <span class="text-[10px] text-slate-400 block -mt-1">精確切割版 | 雙擊拼片查看細節</span>
+                <p class="text-[10px] text-slate-400 -mt-0.5">自動讀取 dory 資料夾內隨機命名圖片</p>
             </div>
         </div>
 
-        <!-- 遊戲進度資訊 -->
-        <div class="flex items-center space-x-4 bg-slate-900/60 px-3 py-1.5 rounded-lg border border-slate-700/50 text-sm">
-            <div class="flex items-center space-x-1.5" title="計時器">
-                <i class="fa-regular fa-clock text-indigo-400"></i>
-                <span id="timerText" class="font-mono font-medium">00:00</span>
-            </div>
-            <div class="h-4 w-px bg-slate-700"></div>
-            <div class="flex items-center space-x-1.5" title="完成進度">
-                <i class="fa-solid fa-check-circle text-emerald-400"></i>
-                <span id="progressText" class="font-mono font-medium">0 / 0</span>
-            </div>
-        </div>
-
-        <!-- 控制按鈕群 -->
+        <!-- 讀取 dory 資料夾核心按鈕 -->
         <div class="flex items-center space-x-2">
-            <button id="btnNewGame" class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center space-x-1.5 shadow-md shadow-indigo-600/20">
-                <i class="fa-solid fa-plus"></i>
-                <span class="hidden sm:inline">新建拼圖</span>
+            <button id="btnLoadFolder" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center space-x-2 shadow-lg shadow-indigo-500/25 active:scale-95">
+                <i class="fa-solid fa-folder-open text-amber-300"></i>
+                <span>📂 載入 dory 資料夾</span>
             </button>
-            <button id="btnTogglePreview" class="bg-slate-700 hover:bg-slate-600 active:scale-95 text-slate-200 px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center space-x-1.5">
+            <input type="file" id="folderInputFallback" webkitdirectory directory multiple class="hidden">
+
+            <button id="btnPrevImg" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-xl text-xs transition disabled:opacity-30" disabled title="上一張圖片">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <button id="btnNextImg" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-xl text-xs transition disabled:opacity-30" disabled title="下一張圖片">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+
+        <!-- 遊戲計時與進度 -->
+        <div class="flex items-center space-x-3 bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-800 text-xs">
+            <div class="flex items-center space-x-1.5">
+                <i class="fa-regular fa-clock text-indigo-400"></i>
+                <span id="timerText" class="font-mono font-bold">00:00</span>
+            </div>
+            <div class="h-3.5 w-px bg-slate-700"></div>
+            <div class="flex items-center space-x-1.5">
+                <i class="fa-solid fa-check-circle text-emerald-400"></i>
+                <span id="progressText" class="font-mono font-bold">0 / 0</span>
+            </div>
+        </div>
+
+        <!-- 遊戲操作工具 -->
+        <div class="flex items-center space-x-2">
+            <button id="btnNewGame" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-xl text-xs font-medium transition flex items-center space-x-1.5">
+                <i class="fa-solid fa-sliders text-indigo-400"></i>
+                <span class="hidden sm:inline">設定</span>
+            </button>
+            <button id="btnTogglePreview" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-xl text-xs font-medium transition flex items-center space-x-1.5">
                 <i class="fa-regular fa-image"></i>
                 <span class="hidden sm:inline">對照圖</span>
             </button>
-            <button id="btnEdgeOnly" class="bg-slate-700 hover:bg-slate-600 active:scale-95 text-slate-200 px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center space-x-1.5" title="高亮外圍邊框片">
+            <button id="btnEdgeOnly" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-xl text-xs font-medium transition" title="高亮外圍邊框片">
                 <i class="fa-solid fa-border-all"></i>
-                <span class="hidden sm:inline">篩選邊框</span>
             </button>
-            <button id="btnSortTray" class="bg-amber-600/80 hover:bg-amber-500 active:scale-95 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center space-x-1.5" title="將未完成片排至兩側">
+            <button id="btnSortTray" class="bg-amber-600/80 hover:bg-amber-500 text-white px-3 py-1.5 rounded-xl text-xs font-medium transition" title="歸位至兩側托盤">
                 <i class="fa-solid fa-boxes-stacked"></i>
-                <span class="hidden sm:inline">自動整理</span>
             </button>
         </div>
     </header>
 
-    <!-- 主要工作區 (Canvas) -->
+    <!-- 已載入圖片畫廊條 (縮圖抽屜) -->
+    <div id="galleryBar" class="hidden bg-slate-900/90 border-b border-slate-800 px-4 py-2 flex items-center space-x-3 overflow-x-auto no-scrollbar z-20 shrink-0">
+        <span class="text-xs text-slate-400 font-semibold shrink-0">dory 圖庫 (<span id="galleryCount">0</span>)：</span>
+        <div id="galleryThumbnails" class="flex items-center space-x-2"></div>
+    </div>
+
+    <!-- Canvas 主繪圖區域 -->
     <main class="flex-1 relative overflow-hidden bg-slate-950 flex items-center justify-center" id="workspace">
         
-        <!-- 背景對照圖片底稿 -->
+        <!-- 背景透明底稿對照 -->
         <div id="hintOverlay" class="absolute inset-0 pointer-events-none flex items-center justify-center opacity-0 transition-opacity duration-300 z-0">
             <img id="hintImage" class="max-w-full max-h-full object-contain filter brightness-90 shadow-2xl opacity-40" alt="Preview Hint">
         </div>
 
-        <!-- 拼圖主繪圖區 -->
+        <!-- 拼圖 Canvas -->
         <canvas id="puzzleCanvas" class="absolute inset-0 z-10 canvas-container"></canvas>
 
-        <!-- 放大鏡預覽面板 -->
-        <div id="magnifierModal" class="hidden absolute top-6 left-1/2 -translate-x-1/2 z-30 bg-slate-800/95 border border-indigo-500/50 p-3 rounded-2xl shadow-2xl backdrop-blur flex flex-col items-center space-y-2 pointer-events-none">
-            <div class="text-xs text-indigo-300 font-bold flex items-center space-x-1">
+        <!-- 雙擊放大鏡面板 -->
+        <div id="magnifierModal" class="hidden absolute top-6 left-1/2 -translate-x-1/2 z-30 bg-slate-900/90 border border-indigo-500/50 p-2.5 rounded-2xl shadow-2xl backdrop-blur flex flex-col items-center space-y-1.5 pointer-events-none">
+            <div class="text-[11px] text-indigo-300 font-bold flex items-center space-x-1">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <span>拼片圖案特寫預覽</span>
+                <span>雙擊拼片特寫預覽</span>
             </div>
-            <canvas id="magnifierCanvas" class="rounded-xl border border-slate-600 shadow-inner" width="160" height="160"></canvas>
+            <canvas id="magnifierCanvas" class="rounded-xl border border-slate-700 shadow-inner" width="160" height="160"></canvas>
         </div>
 
-        <!-- 縮放與畫布控制懸浮面板 -->
-        <div class="absolute bottom-4 left-4 z-20 flex items-center bg-slate-800/90 backdrop-blur border border-slate-700/80 rounded-xl p-1.5 shadow-xl space-x-1">
-            <button id="btnZoomIn" class="p-2 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition" title="放大 (最大500%)">
+        <!-- 畫布平移縮放控制項 -->
+        <div class="absolute bottom-4 left-4 z-20 flex items-center bg-slate-900/90 backdrop-blur border border-slate-800 rounded-xl p-1.5 shadow-xl space-x-1">
+            <button id="btnZoomIn" class="p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition" title="放大">
                 <i class="fa-solid fa-magnifying-glass-plus"></i>
             </button>
-            <button id="btnZoomReset" class="px-2 py-1 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white text-xs font-mono font-medium transition" title="重置視角與倍率" id="zoomText">
+            <button id="btnZoomReset" class="px-2 py-1 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white text-xs font-mono font-bold transition" id="zoomText">
                 100%
             </button>
-            <button id="btnZoomOut" class="p-2 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition" title="縮小">
+            <button id="btnZoomOut" class="p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition" title="縮小">
                 <i class="fa-solid fa-magnifying-glass-minus"></i>
             </button>
-            <div class="h-4 w-px bg-slate-700 my-auto"></div>
-            <button id="btnScatter" class="p-2 hover:bg-slate-700 rounded-lg text-amber-400 hover:text-amber-300 transition" title="隨機散開剩餘拼片">
+            <div class="h-4 w-px bg-slate-800 my-auto"></div>
+            <button id="btnScatter" class="p-2 hover:bg-slate-800 rounded-lg text-amber-400 hover:text-amber-300 transition" title="分散剩餘拼片">
                 <i class="fa-solid fa-shuffle"></i>
             </button>
         </div>
 
-        <!-- 底圖透明度控制 -->
-        <div id="opacitySliderContainer" class="hidden absolute top-4 right-4 z-20 bg-slate-800/90 backdrop-blur border border-slate-700 rounded-xl p-3 shadow-xl flex items-center space-x-3 text-xs">
-            <span class="text-slate-400">底圖透明度</span>
-            <input type="range" id="opacitySlider" min="0.1" max="0.9" step="0.05" value="0.4" class="w-24 accent-indigo-500">
+        <!-- 底圖透明度調節控制器 -->
+        <div id="opacitySliderContainer" class="hidden absolute top-4 right-4 z-20 bg-slate-900/90 backdrop-blur border border-slate-800 rounded-xl p-3 shadow-xl flex items-center space-x-3 text-xs">
+            <span class="text-slate-400 font-medium">底圖透明度</span>
+            <input type="range" id="opacitySlider" min="0.1" max="0.9" step="0.05" value="0.4" class="w-24 accent-indigo-500 cursor-pointer">
+        </div>
+
+        <!-- 拖拽圖片 / 資料夾提示罩 -->
+        <div id="dragDropOverlay" class="hidden absolute inset-0 z-40 bg-indigo-950/80 backdrop-blur-md border-4 border-dashed border-indigo-400 flex flex-col items-center justify-center text-white pointer-events-none">
+            <i class="fa-solid fa-folder-open text-6xl text-indigo-300 mb-4 animate-bounce"></i>
+            <h3 class="text-2xl font-bold">放開滑鼠以載入 dory 資料夾 / 圖片</h3>
+            <p class="text-sm text-indigo-200 mt-2">自動讀取資料夾內的 JPG, PNG, WEBP, GIF 圖片</p>
         </div>
     </main>
 
-    <!-- 新拼圖設定 Modal -->
-    <div id="newGameModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 w-full max-w-xl rounded-2xl shadow-2xl p-6 overflow-y-auto max-h-[90vh]">
-            <div class="flex justify-between items-center pb-4 border-b border-slate-700 mb-5">
-                <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+    <!-- 拼圖設定面板 Modal -->
+    <div id="newGameModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl shadow-2xl p-6 overflow-y-auto max-h-[90vh]">
+            <div class="flex justify-between items-center pb-4 border-b border-slate-800 mb-5">
+                <h2 class="text-lg font-bold text-white flex items-center space-x-2">
                     <i class="fa-solid fa-sliders text-indigo-400"></i>
-                    <span>建立新拼圖遊戲</span>
+                    <span>拼圖難度與片數設定</span>
                 </h2>
                 <button id="btnCloseModal" class="text-slate-400 hover:text-white p-1 rounded-lg transition">
                     <i class="fa-solid fa-xmark text-xl"></i>
                 </button>
             </div>
 
-            <!-- 1. 選擇圖片 -->
-            <div class="space-y-4 mb-6">
-                <label class="block text-sm font-semibold text-slate-300">步驟 1：選擇圖片</label>
-                
-                <div class="relative border-2 border-dashed border-slate-600 hover:border-indigo-500 rounded-xl p-4 text-center cursor-pointer transition bg-slate-900/50 group">
-                    <input type="file" id="imageInput" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                    <div class="flex flex-col items-center justify-center space-y-1">
-                        <i class="fa-solid fa-cloud-arrow-up text-3xl text-slate-400 group-hover:text-indigo-400 transition"></i>
-                        <span class="text-sm font-medium text-slate-300 group-hover:text-white">點擊或拖曳自訂圖片上傳</span>
-                    </div>
-                </div>
-
-                <div>
-                    <span class="text-xs text-slate-400 block mb-2">或選擇預設圖庫：</span>
-                    <div class="grid grid-cols-4 gap-2" id="sampleImagesGrid"></div>
-                </div>
-            </div>
-
-            <!-- 2. 選擇拼圖片數 -->
-            <div class="space-y-3 mb-8">
-                <label class="block text-sm font-semibold text-slate-300">步驟 2：選擇目標片數 (預設 100 片最舒適)</label>
+            <!-- 片數選擇 -->
+            <div class="space-y-3 mb-6">
+                <label class="block text-sm font-semibold text-slate-300">選擇拼圖片數 (預設 100 片)</label>
                 <div class="grid grid-cols-3 sm:grid-cols-7 gap-2">
-                    <button class="piece-option-btn p-2 rounded-xl border border-slate-700 bg-slate-900 hover:border-indigo-500 text-center transition" data-pieces="24">
+                    <button class="piece-option-btn p-2 rounded-xl border border-slate-800 bg-slate-950 hover:border-indigo-500 text-center transition" data-pieces="24">
                         <div class="text-base font-bold text-white">24</div>
-                        <div class="text-[9px] text-slate-400">超大塊</div>
+                        <div class="text-[9px] text-slate-400">特大</div>
                     </button>
-                    <button class="piece-option-btn p-2 rounded-xl border border-slate-700 bg-slate-900 hover:border-indigo-500 text-center transition" data-pieces="48">
+                    <button class="piece-option-btn p-2 rounded-xl border border-slate-800 bg-slate-950 hover:border-indigo-500 text-center transition" data-pieces="48">
                         <div class="text-base font-bold text-white">48</div>
                         <div class="text-[9px] text-slate-400">大塊</div>
                     </button>
-                    <button class="piece-option-btn active-piece-btn p-2 rounded-xl border-2 border-indigo-500 bg-indigo-950/40 text-center transition relative overflow-hidden" data-pieces="100">
+                    <button class="piece-option-btn active-piece-btn p-2 rounded-xl border-2 border-indigo-500 bg-indigo-950/50 text-center transition" data-pieces="100">
                         <div class="text-base font-bold text-indigo-300">100</div>
-                        <div class="text-[9px] text-indigo-400">推薦舒適</div>
+                        <div class="text-[9px] text-indigo-400">推薦</div>
                     </button>
-                    <button class="piece-option-btn p-2 rounded-xl border border-slate-700 bg-slate-900 hover:border-indigo-500 text-center transition" data-pieces="200">
+                    <button class="piece-option-btn p-2 rounded-xl border border-slate-800 bg-slate-950 hover:border-indigo-500 text-center transition" data-pieces="200">
                         <div class="text-base font-bold text-white">200</div>
-                        <div class="text-[9px] text-slate-400">進階適中</div>
+                        <div class="text-[9px] text-slate-400">適中</div>
                     </button>
-                    <button class="piece-option-btn p-2 rounded-xl border border-slate-700 bg-slate-900 hover:border-indigo-500 text-center transition opacity-80" data-pieces="500">
+                    <button class="piece-option-btn p-2 rounded-xl border border-slate-800 bg-slate-950 hover:border-indigo-500 text-center transition" data-pieces="500">
                         <div class="text-base font-bold text-amber-300">500</div>
-                        <div class="text-[9px] text-amber-400">微縮挑戰</div>
+                        <div class="text-[9px] text-amber-400">微縮</div>
                     </button>
-                    <button class="piece-option-btn p-2 rounded-xl border border-slate-700 bg-slate-900 hover:border-indigo-500 text-center transition opacity-70" data-pieces="800">
+                    <button class="piece-option-btn p-2 rounded-xl border border-slate-800 bg-slate-950 hover:border-indigo-500 text-center transition" data-pieces="800">
                         <div class="text-base font-bold text-rose-300">800</div>
-                        <div class="text-[9px] text-rose-400">密集高難</div>
+                        <div class="text-[9px] text-rose-400">高難</div>
                     </button>
-                    <button class="piece-option-btn p-2 rounded-xl border border-slate-700 bg-slate-900 hover:border-indigo-500 text-center transition opacity-60" data-pieces="1000">
+                    <button class="piece-option-btn p-2 rounded-xl border border-slate-800 bg-slate-950 hover:border-indigo-500 text-center transition" data-pieces="1000">
                         <div class="text-base font-bold text-purple-300">1000</div>
-                        <div class="text-[9px] text-purple-400">極限大師</div>
+                        <div class="text-[9px] text-purple-400">大師</div>
                     </button>
                 </div>
                 <p id="gridInfoText" class="text-xs text-indigo-300 text-right mt-1 font-mono">預計網格：12 x 8 格 (96 片)</p>
             </div>
 
             <!-- 開始按鈕 -->
-            <button id="btnStartGame" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-indigo-500/25 transition transform active:scale-98 flex items-center justify-center space-x-2 text-base">
+            <button id="btnStartGame" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-indigo-600/30 transition active:scale-98 flex items-center justify-center space-x-2 text-sm">
                 <i class="fa-solid fa-play"></i>
-                <span>開始拼圖</span>
+                <span>開始遊戲</span>
             </button>
         </div>
     </div>
 
+    <!-- JavaScript 遊戲核心與資料夾載入邏輯 -->
     <script>
         class SoundEffects {
             constructor() { this.ctx = null; }
@@ -239,17 +245,16 @@
 
         const soundFX = new SoundEffects();
 
-        const SAMPLE_IMAGES = [
-            { name: "預設圖片 (Dory)", url: "dory.jpg" },
-            { name: "壯麗雪山", url: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80" },
-            { name: "威尼斯運河", url: "https://images.unsplash.com/photo-1514890547357-a9ee288728e0?auto=format&fit=crop&w=1200&q=80" },
-            { name: "夢幻熱帶雨林", url: "https://images.unsplash.com/photo-1511497584788-8767611136f6?auto=format&fit=crop&w=1200&q=80" }
-        ];
+        // 預設 SVG Dory 圖像樣板
+        const DEFAULT_SVG_DORY = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800"><rect width="1200" height="800" fill="%230f172a"/><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="%231e1b4b"/><stop offset="100%" stop-color="%23311b92"/></linearGradient></defs><rect width="1200" height="800" fill="url(%23g)"/><circle cx="600" cy="400" r="300" fill="%232563eb" opacity="0.8"/><ellipse cx="550" cy="400" rx="220" ry="140" fill="%233b82f6"/><path d="M 750,400 L 920,300 L 920,500 Z" fill="%23facc15"/><circle cx="430" cy="360" r="28" fill="%23ffffff"/><circle cx="430" cy="360" r="14" fill="%23000000"/><path d="M 400,430 Q 500,480 600,420" stroke="%23ffffff" stroke-width="8" fill="none" stroke-linecap="round"/><text x="600" y="720" font-family="sans-serif" font-size="32" font-weight="bold" fill="%23818cf8" text-anchor="middle">請點擊上方的 [📂 載入 dory 資料夾] 按鈕匯入圖片</text></svg>`;
+
+        let loadedImages = []; // { name, url }
+        let currentImageIndex = 0;
+        let currentImage = new Image();
 
         const canvas = document.getElementById('puzzleCanvas');
         const ctx = canvas.getContext('2d');
 
-        let currentImage = new Image();
         let selectedPieceCount = 100;
         let cols = 12;
         let rows = 8;
@@ -258,7 +263,6 @@
         let groups = [];
         let boardBounds = { x: 0, y: 0, w: 0, h: 0 };
 
-        // Viewport Pan/Zoom
         let scale = 1.0;
         let panX = 0;
         let panY = 0;
@@ -277,10 +281,91 @@
 
         let horizontalTabs = [];
         let verticalTabs = [];
-
         let lastClickTime = 0;
 
-        // 計算最佳網格
+        // 自動載入/讀取 dory 資料夾
+        async function loadDoryFolder() {
+            try {
+                if ('showDirectoryPicker' in window) {
+                    const dirHandle = await window.showDirectoryPicker();
+                    const files = [];
+                    for await (const entry of dirHandle.values()) {
+                        if (entry.kind === 'file') {
+                            const file = await entry.getFile();
+                            if (file.type.startsWith('image/') || /\.(jpg|jpeg|png|webp|gif)$/i.test(file.name)) {
+                                files.push(file);
+                            }
+                        }
+                    }
+                    if (files.length > 0) {
+                        processFileList(files);
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.log("Directory Picker fallback", err);
+            }
+            // 回退觸發傳統 input file directory
+            document.getElementById('folderInputFallback').click();
+        }
+
+        function processFileList(files) {
+            const validImages = Array.from(files).filter(f => 
+                f.type.startsWith('image/') || /\.(jpg|jpeg|png|webp|gif)$/i.test(f.name)
+            );
+
+            if (validImages.length === 0) {
+                alert("所選資料夾中未找到可用的 JPG, PNG, WEBP 圖像！");
+                return;
+            }
+
+            // 清理舊的 Blob URLs
+            loadedImages.forEach(img => URL.revokeObjectURL(img.url));
+            loadedImages = validImages.map(file => ({
+                name: file.name,
+                url: URL.createObjectURL(file)
+            }));
+
+            currentImageIndex = 0;
+            renderGalleryDrawer();
+            switchImage(0);
+        }
+
+        function renderGalleryDrawer() {
+            const drawer = document.getElementById('galleryBar');
+            const thumbsContainer = document.getElementById('galleryThumbnails');
+            const countText = document.getElementById('galleryCount');
+
+            drawer.classList.remove('hidden');
+            countText.innerText = loadedImages.length;
+            thumbsContainer.innerHTML = '';
+
+            loadedImages.forEach((item, idx) => {
+                const thumb = document.createElement('div');
+                thumb.className = `w-12 h-12 rounded-lg overflow-hidden border-2 cursor-pointer shrink-0 transition ${idx === currentImageIndex ? 'border-indigo-500 scale-105 shadow-md shadow-indigo-500/30' : 'border-slate-800 opacity-60 hover:opacity-100'}`;
+                thumb.innerHTML = `<img src="${item.url}" class="w-full h-full object-cover" title="${item.name}">`;
+                thumb.addEventListener('click', () => switchImage(idx));
+                thumbsContainer.appendChild(thumb);
+            });
+
+            document.getElementById('btnPrevImg').disabled = loadedImages.length <= 1;
+            document.getElementById('btnNextImg').disabled = loadedImages.length <= 1;
+        }
+
+        function switchImage(index) {
+            if (loadedImages.length === 0) return;
+            currentImageIndex = (index + loadedImages.length) % loadedImages.length;
+            const target = loadedImages[currentImageIndex];
+
+            document.getElementById('currentImgName').innerText = target.name;
+            renderGalleryDrawer();
+
+            currentImage = new Image();
+            currentImage.crossOrigin = "Anonymous";
+            currentImage.onload = () => { setupGame(); };
+            currentImage.src = target.url;
+        }
+
         function calculateGrid(imgWidth, imgHeight, targetCount) {
             const aspect = imgWidth / imgHeight;
             let bestCols = Math.round(Math.sqrt(targetCount * aspect));
@@ -290,7 +375,6 @@
             return { cols: bestCols, rows: bestRows, actualCount: bestCols * bestRows };
         }
 
-        // 產生凹凸形狀邊界
         function generateTabs(cols, rows) {
             horizontalTabs = [];
             verticalTabs = [];
@@ -327,7 +411,6 @@
 
                     const isEdge = (r === 0 || r === rows - 1 || c === 0 || c === cols - 1);
 
-                    // 初始拼片隨機散落於畫面兩側托盤區
                     let randomX, randomY;
                     if (Math.random() < 0.5) {
                         randomX = Math.random() < 0.5 
@@ -358,7 +441,6 @@
             }
         }
 
-        // 貝茲曲線繪製凸榫路徑
         function drawPiecePath(ctx, x, y, w, h, tabs) {
             const tabSize = Math.min(w, h) * 0.22;
             ctx.beginPath();
@@ -413,7 +495,7 @@
             ctx.translate(panX, panY);
             ctx.scale(scale, scale);
 
-            // 1. 繪製底板容器背景
+            // 1. 底板外框與底色
             ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
             ctx.strokeStyle = 'rgba(99, 102, 241, 0.5)';
             ctx.lineWidth = 3;
@@ -422,8 +504,8 @@
             ctx.fill();
             ctx.stroke();
 
-            // 底板對齊網格線
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+            // 對齊線
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
             ctx.lineWidth = 1;
             const pW = boardBounds.w / cols;
             const pH = boardBounds.h / rows;
@@ -440,7 +522,7 @@
                 ctx.stroke();
             }
 
-            // 2. 繪製所有拼圖群組
+            // 2. 繪製拼圖群組
             groups.forEach(group => {
                 if (group !== draggedGroup) renderGroup(group);
             });
@@ -462,8 +544,6 @@
                 }
 
                 ctx.save();
-                
-                // 1. 繪製並裁切拼圖凸榫路徑
                 drawPiecePath(ctx, p.x, p.y, p.width, p.height, p.tabs);
 
                 if (isDragging) {
@@ -477,18 +557,13 @@
                 }
 
                 ctx.save();
-                ctx.clip(); // 建立凹凸拼片裁切面
+                ctx.clip();
 
-                // 2. 精確 1:1 圖片裁切點計算 (修復圖片拉伸與幾何錯位問題)
-                const tabPadding = Math.min(p.width, p.height) * 0.35; // 擴充繪製範圍容納凸榫
-
-                // 計算 Canvas 上的目標繪製區域 (Include tab margins)
+                // 精確 1:1 比率圖像裁切 (Mapping Source coordinates)
+                const tabPadding = Math.min(p.width, p.height) * 0.35;
                 const renderDx = p.x - tabPadding;
                 const renderDy = p.y - tabPadding;
-                const renderDw = p.width + tabPadding * 2;
-                const renderDh = p.height + tabPadding * 2;
 
-                // 將 Canvas 座標精確轉換為原圖像素座標空間 (Source Image coordinates)
                 const scaleX = currentImage.width / boardBounds.w;
                 const scaleY = currentImage.height / boardBounds.h;
 
@@ -497,7 +572,6 @@
                 const renderSw = (p.width + tabPadding * 2) * scaleX;
                 const renderSh = (p.height + tabPadding * 2) * scaleY;
 
-                // 安全邊界限制，防止越界裁切
                 const safeSx = Math.max(0, renderSx);
                 const safeSy = Math.max(0, renderSy);
                 const safeSw = Math.min(currentImage.width - safeSx, renderSw - (safeSx - renderSx));
@@ -516,7 +590,6 @@
 
                 ctx.restore();
 
-                // 3. 繪製拼片輪廓線與光影
                 ctx.strokeStyle = p.isLocked 
                     ? 'rgba(255, 255, 255, 0.25)' 
                     : (isDragging ? 'rgba(129, 140, 248, 0.95)' : 'rgba(255, 255, 255, 0.45)');
@@ -634,7 +707,7 @@
             const snapThreshold = Math.min(boardBounds.w / cols, boardBounds.h / rows) * 0.4;
             let snapped = false;
 
-            // 吸附底板
+            // 1. 吸附底圖正確位置
             for (const p of group.pieces) {
                 const distToTarget = Math.hypot(p.x - p.targetX, p.y - p.targetY);
 
@@ -654,7 +727,7 @@
                 }
             }
 
-            // 吸附相鄰拼片
+            // 2. 吸附相鄰拼片
             if (!snapped) {
                 for (const otherGroup of groups) {
                     if (otherGroup === group) continue;
@@ -712,10 +785,10 @@
                 clearInterval(timerInterval);
                 soundFX.playVictory();
 
-                confetti({ particleCount: 180, spread: 90, origin: { y: 0.6 } });
+                confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
 
                 setTimeout(() => {
-                    alert(`🎉 恭喜完成！\n花費時間：${formatTime(secondsElapsed)}\n挑戰片數：${pieces.length} 片`);
+                    alert(`🎉 恭喜完成這關拼圖！\n花費時間：${formatTime(secondsElapsed)}\n挑戰片數：${pieces.length} 片`);
                 }, 300);
             }
         }
@@ -743,7 +816,7 @@
 
             const maxW = canvas.width * 0.75;
             const maxH = canvas.height * 0.75;
-            const imgAspect = currentImage.width / currentImage.height;
+            const imgAspect = (currentImage.width || 1200) / (currentImage.height || 800);
 
             let boardW = maxW;
             let boardH = maxW / imgAspect;
@@ -765,7 +838,7 @@
             hintImg.style.width = `${boardW}px`;
             hintImg.style.height = `${boardH}px`;
 
-            const grid = calculateGrid(currentImage.width, currentImage.height, selectedPieceCount);
+            const grid = calculateGrid(currentImage.width || 1200, currentImage.height || 800, selectedPieceCount);
             cols = grid.cols;
             rows = grid.rows;
 
@@ -784,48 +857,24 @@
         function initUI() {
             const modal = document.getElementById('newGameModal');
 
-            document.getElementById('btnNewGame').addEventListener('click', () => modal.classList.remove('hidden'));
-            document.getElementById('btnCloseModal').addEventListener('click', () => modal.classList.add('hidden'));
-
-            const sampleGrid = document.getElementById('sampleImagesGrid');
-            sampleGrid.innerHTML = '';
-            SAMPLE_IMAGES.forEach((item, idx) => {
-                const imgDiv = document.createElement('div');
-                imgDiv.className = `relative rounded-xl overflow-hidden cursor-pointer border-2 transition ${idx === 0 ? 'border-indigo-500 scale-105' : 'border-slate-700 hover:border-slate-500'}`;
-                imgDiv.innerHTML = `
-                    <img src="${item.url}" onerror="this.onerror=null; this.src='https://placehold.co/1200x800/1e293b/6366f1?text=Dory+Image';" class="w-full h-16 object-cover" alt="${item.name}">
-                    <span class="absolute bottom-0 inset-x-0 bg-black/60 text-[10px] text-center text-white truncate px-1 py-0.5">${item.name}</span>
-                `;
-                imgDiv.addEventListener('click', () => {
-                    document.querySelectorAll('#sampleImagesGrid > div').forEach(d => d.className = 'relative rounded-xl overflow-hidden cursor-pointer border-2 border-slate-700 hover:border-slate-500');
-                    imgDiv.className = 'relative rounded-xl overflow-hidden cursor-pointer border-2 border-indigo-500 scale-105';
-                    currentImage.src = item.url;
-                });
-                sampleGrid.appendChild(imgDiv);
-            });
-
-            currentImage.crossOrigin = "Anonymous";
-            currentImage.onerror = () => {
-                currentImage.src = "https://placehold.co/1200x800/1e293b/6366f1?text=dory.jpg";
-            };
-            currentImage.src = "dory.jpg";
-
-            document.getElementById('imageInput').addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (evt) => {
-                        currentImage.src = evt.target.result;
-                    };
-                    reader.readAsDataURL(file);
+            document.getElementById('btnLoadFolder').addEventListener('click', loadDoryFolder);
+            document.getElementById('folderInputFallback').addEventListener('change', (e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                    processFileList(e.target.files);
                 }
             });
+
+            document.getElementById('btnPrevImg').addEventListener('click', () => switchImage(currentImageIndex - 1));
+            document.getElementById('btnNextImg').addEventListener('click', () => switchImage(currentImageIndex + 1));
+
+            document.getElementById('btnNewGame').addEventListener('click', () => modal.classList.remove('hidden'));
+            document.getElementById('btnCloseModal').addEventListener('click', () => modal.classList.add('hidden'));
 
             const pieceBtns = document.querySelectorAll('.piece-option-btn');
             pieceBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
-                    pieceBtns.forEach(b => b.classList.remove('border-2', 'border-indigo-500', 'bg-indigo-950/40'));
-                    btn.classList.add('border-2', 'border-indigo-500', 'bg-indigo-950/40');
+                    pieceBtns.forEach(b => b.classList.remove('border-2', 'border-indigo-500', 'bg-indigo-950/50'));
+                    btn.classList.add('border-2', 'border-indigo-500', 'bg-indigo-950/50');
                     selectedPieceCount = parseInt(btn.dataset.pieces);
 
                     const grid = calculateGrid(currentImage.width || 1200, currentImage.height || 800, selectedPieceCount);
@@ -899,18 +948,9 @@
                 document.getElementById('zoomText').innerText = `${Math.round(scale * 100)}%`;
             };
 
-            document.getElementById('btnZoomIn').addEventListener('click', () => {
-                scale = Math.min(scale * 1.25, 5.0);
-                updateZoomText();
-            });
-            document.getElementById('btnZoomOut').addEventListener('click', () => {
-                scale = Math.max(scale / 1.25, 0.4);
-                updateZoomText();
-            });
-            document.getElementById('btnZoomReset').addEventListener('click', () => {
-                scale = 1.0; panX = 0; panY = 0;
-                updateZoomText();
-            });
+            document.getElementById('btnZoomIn').addEventListener('click', () => { scale = Math.min(scale * 1.25, 5.0); updateZoomText(); });
+            document.getElementById('btnZoomOut').addEventListener('click', () => { scale = Math.max(scale / 1.25, 0.4); updateZoomText(); });
+            document.getElementById('btnZoomReset').addEventListener('click', () => { scale = 1.0; panX = 0; panY = 0; updateZoomText(); });
 
             document.getElementById('btnScatter').addEventListener('click', () => {
                 groups.forEach(g => {
@@ -926,6 +966,20 @@
                         g.pieces.forEach(p => { p.x += dx; p.y += dy; });
                     }
                 });
+            });
+
+            // 拖放 (Drag and Drop) 資料夾或圖片
+            const dropOverlay = document.getElementById('dragDropOverlay');
+            window.addEventListener('dragover', (e) => { e.preventDefault(); dropOverlay.classList.remove('hidden'); });
+            window.addEventListener('dragleave', (e) => {
+                if (e.clientX <= 0 || e.clientY <= 0) dropOverlay.classList.add('hidden');
+            });
+            window.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropOverlay.classList.add('hidden');
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    processFileList(e.dataTransfer.files);
+                }
             });
 
             canvas.addEventListener('mousedown', handlePointerDown);
@@ -954,6 +1008,7 @@
                 setupGame();
                 requestAnimationFrame(render);
             };
+            currentImage.src = DEFAULT_SVG_DORY;
         };
     </script>
 </body>
